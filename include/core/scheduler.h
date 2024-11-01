@@ -1,20 +1,8 @@
 #ifndef SCHEDULER_H
 #define SCHEDULER_H
 
-#include "beehive_types.h"
-
-#define MAX_PROCESSES 40
-
-typedef enum {
-    ROUND_ROBIN,
-    SHORTEST_JOB_FIRST
-} SchedulingPolicy;
-
-typedef struct {
-    ProcessControlBlock* pcb;
-    Beehive* hive;
-    int index;  // Index in beehives array
-} ProcessInfo;
+#include <stdbool.h>
+#include "../types/scheduler_types.h"
 
 void init_scheduler(void);
 void switch_scheduling_policy(void);

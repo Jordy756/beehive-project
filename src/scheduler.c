@@ -1,43 +1,42 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "scheduler.h"
-#include "utils.h"
+#include "../include/core/scheduler.h"
+#include "../include/core/utils.h"
 
-// Static variables for scheduler
-static SchedulingPolicy current_policy = ROUND_ROBIN;
-static int current_quantum;
-static int quantum_counter = 0;
-static int policy_switch_counter = 0;
-static bool sort_by_bees = true;  // Toggle between sorting by bees and honey
+// Static state variable
+static SchedulerState scheduler_state;
 
-#define POLICY_SWITCH_THRESHOLD 10  // Switch policy every 10 iterations
-
-// Define job queue
+// Define job queue from the state
 ProcessInfo* job_queue = NULL;
 int job_queue_size = 0;
 
 void init_scheduler(void) {
-    current_quantum = random_range(MIN_QUANTUM, MAX_QUANTUM);
-    current_policy = ROUND_ROBIN;
-    quantum_counter = 0;
-    policy_switch_counter = 0;
+    scheduler_state.current_quantum = random_range(MIN_QUANTUM, MAX_QUANTUM);
+    scheduler_state.current_policy = ROUND_ROBIN;
+    scheduler_state.quantum_counter = 0;
+    scheduler_state.policy_switch_counter = 0;
+    scheduler_state.sort_by_bees = true;
     
     // Initialize job queue
     job_queue = malloc(sizeof(ProcessInfo) * MAX_PROCESSES);
+    scheduler_state.job_queue = job_queue;
+    scheduler_state.job_queue_size = 0;
     job_queue_size = 0;
 }
 
 void switch_scheduling_policy(void) {
-    current_policy = (current_policy == ROUND_ROBIN) ? SHORTEST_JOB_FIRST : ROUND_ROBIN;
+    scheduler_state.current_policy = (scheduler_state.current_policy == ROUND_ROBIN) ? 
+                                   SHORTEST_JOB_FIRST : ROUND_ROBIN;
     
-    if (current_policy == SHORTEST_JOB_FIRST) {
-        sort_by_bees = !sort_by_bees;
+    if (scheduler_state.current_policy == SHORTEST_JOB_FIRST) {
+        scheduler_state.sort_by_bees = !scheduler_state.sort_by_bees;
     }
     
-    printf("Switched to %s", current_policy == ROUND_ROBIN ? "Round Robin" : "Shortest Job First");
-    if (current_policy != ROUND_ROBIN ) {
-        printf(" (Sort by: %s)\n", sort_by_bees ? "Bees" : "Honey");
+    printf("Switched to %s", scheduler_state.current_policy == ROUND_ROBIN ? 
+           "Round Robin" : "Shortest Job First");
+    if (scheduler_state.current_policy != ROUND_ROBIN) {
+        printf(" (Sort by: %s)\n", scheduler_state.sort_by_bees ? "Bees" : "Honey");
     } else {
         printf("\n");
     }
@@ -70,6 +69,7 @@ void update_process_info(ProcessInfo* info, ProcessControlBlock* pcb, Beehive* h
 }
 
 void update_job_queue(Beehive** beehives, int total_beehives) {
+    scheduler_state.job_queue_size = 0;
     job_queue_size = 0;
     
     // Add all active beehives to job queue
@@ -78,29 +78,30 @@ void update_job_queue(Beehive** beehives, int total_beehives) {
             job_queue[job_queue_size].hive = beehives[i];
             job_queue[job_queue_size].index = i;
             job_queue_size++;
+            scheduler_state.job_queue_size++;
         }
     }
     
     // Sort if using SJF
-    if (current_policy == SHORTEST_JOB_FIRST && job_queue_size > 1) {
-        sort_processes_sjf(job_queue, job_queue_size, sort_by_bees);
+    if (scheduler_state.current_policy == SHORTEST_JOB_FIRST && job_queue_size > 1) {
+        sort_processes_sjf(job_queue, job_queue_size, scheduler_state.sort_by_bees);
     }
 }
 
 void schedule_process(ProcessControlBlock* pcb) {
-    policy_switch_counter++;
+    scheduler_state.policy_switch_counter++;
     
     // Check if we should switch policies
-    if (policy_switch_counter >= POLICY_SWITCH_THRESHOLD) {
+    if (scheduler_state.policy_switch_counter >= POLICY_SWITCH_THRESHOLD) {
         switch_scheduling_policy();
-        policy_switch_counter = 0;
+        scheduler_state.policy_switch_counter = 0;
     }
     
-    if (current_policy == ROUND_ROBIN) {
-        quantum_counter++;
-        if (quantum_counter >= current_quantum) {
+    if (scheduler_state.current_policy == ROUND_ROBIN) {
+        scheduler_state.quantum_counter++;
+        if (scheduler_state.quantum_counter >= scheduler_state.current_quantum) {
             update_quantum();
-            quantum_counter = 0;
+            scheduler_state.quantum_counter = 0;
         }
     }
     
@@ -108,14 +109,14 @@ void schedule_process(ProcessControlBlock* pcb) {
 }
 
 void update_quantum(void) {
-    current_quantum = random_range(MIN_QUANTUM, MAX_QUANTUM);
-    printf("New quantum: %d\n", current_quantum);
+    scheduler_state.current_quantum = random_range(MIN_QUANTUM, MAX_QUANTUM);
+    printf("New quantum: %d\n", scheduler_state.current_quantum);
 }
 
 SchedulingPolicy get_current_policy(void) {
-    return current_policy;
+    return scheduler_state.current_policy;
 }
 
 int get_current_quantum(void) {
-    return current_quantum;
+    return scheduler_state.current_quantum;
 }
