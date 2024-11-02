@@ -12,11 +12,11 @@
 #include "../include/types/scheduler_types.h"
 
 volatile sig_atomic_t running = 1;
-Beehive* beehives[MAX_PROCESSES] = {NULL};  // Inicializar array con NULL
+Beehive* beehives[MAX_PROCESSES] = {NULL};
 int total_beehives = 0;
 
 void handle_signal(int sig) {
-    (void)sig;  // Evitar warning de variable no utilizada
+    (void)sig;
     running = 0;
     log_message("Received shutdown signal, cleaning up...");
 }
@@ -45,28 +45,40 @@ void initialize_first_beehive() {
 }
 
 void initialize_system() {
-    // Configurar el manejador de señales
     signal(SIGINT, handle_signal);
-    
-    // Inicializar componentes del sistema
     init_random();
     init_scheduler();
     init_process_manager();
-    
     log_message("System components initialized");
-    
-    // Inicializar la primera colmena
     initialize_first_beehive();
 }
 
-// void update_process_control_block(ProcessControlBlock* pcb, Beehive* hive) {
-//     pcb->bee_count = hive->bee_count;
-//     pcb->honey_count = hive->honey_count;
-//     pcb->egg_count = hive->egg_count;
-    
-//     // Actualizar el historial de la colmena
-//     update_beehive_history(hive->id, hive->bee_count, hive->honey_count, hive->egg_count);
-// }
+void manage_beehive(Beehive* hive) {
+    // Procesar eclosión de huevos si hay espacio para más abejas
+    if (hive->bee_count < hive->max_bees && hive->egg_count > 0) {
+        process_egg_hatching(hive);
+    }
+
+    // Verificar si hay una reina y si puede crear una nueva colmena
+    if (hive->bee_count >= MIN_BEES && check_new_queen(hive) && total_beehives < MAX_PROCESSES) {
+        int new_id = total_beehives;
+        beehives[new_id] = malloc(sizeof(Beehive));
+        if (beehives[new_id] != NULL) {
+            init_beehive(beehives[new_id], new_id);
+            total_beehives++;
+            char message[100];
+            snprintf(message, sizeof(message), 
+                    "New beehive created! ID: %d, Total beehives: %d", 
+                    new_id, total_beehives);
+            log_message(message);
+        }
+    }
+
+    // Si hay muy pocas abejas y suficientes huevos, forzar eclosión
+    if (hive->bee_count < MIN_BEES && hive->egg_count > 0) {
+        process_egg_hatching(hive);
+    }
+}
 
 int main() {
     initialize_system();
@@ -84,7 +96,6 @@ int main() {
     };
     strncpy(pcb.status, "READY", sizeof(pcb.status) - 1);
     
-    // Inicializar tabla de procesos
     ProcessTable process_table = {
         .avg_arrival_time = 0,
         .avg_iterations = 0,
@@ -106,40 +117,24 @@ int main() {
             int current_index = job_queue[i].index;
             Beehive* current_hive = beehives[current_index];
             
-            if (current_hive == NULL) {
-                continue;
-            }
+            if (current_hive == NULL) continue;
             
             pcb.process_id = current_index;
             
+            // Usar semáforo solo cuando sea necesario
             if (get_current_policy() == ROUND_ROBIN && total_beehives >= 2) {
                 sem_wait(&current_hive->resource_sem);
             }
             
+            // Gestionar la colmena actual
+            manage_beehive(current_hive);
+            
+            // Programar proceso y actualizar estadísticas
             schedule_process(&pcb);
-            process_egg_hatching(current_hive);
             print_beehive_stats(current_hive);
             
             if (get_current_policy() == ROUND_ROBIN && total_beehives >= 2) {
                 sem_post(&current_hive->resource_sem);
-            }
-            
-            if (check_new_queen(current_hive) && total_beehives < MAX_PROCESSES) {
-                int new_id = total_beehives;
-                beehives[new_id] = malloc(sizeof(Beehive));
-                if (beehives[new_id] == NULL) {
-                    log_message("Error: Failed to allocate memory for new beehive");
-                    continue;
-                }
-                init_beehive(beehives[new_id], new_id);
-                total_beehives++;
-                process_table.total_processes++;
-                
-                char message[100];
-                snprintf(message, sizeof(message), 
-                        "New beehive created! ID: %d, Total beehives: %d", 
-                        new_id, total_beehives);
-                log_message(message);
             }
             
             // Actualizar PCB y tabla de procesos
@@ -148,7 +143,7 @@ int main() {
             pcb.iterations++;
         }
         
-        delay_ms(100);
+        delay_ms(100);  // Evitar uso excesivo de CPU
     }
     
     cleanup_all_beehives();

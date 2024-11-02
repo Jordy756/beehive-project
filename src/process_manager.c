@@ -7,6 +7,7 @@
 #include "../include/core/utils.h"
 
 void init_process_manager(void) {
+    // Crear directorio data si no existe
     struct stat st = {0};
     if (stat("data", &st) == -1) {
         if (mkdir("data", 0700) == -1) {
@@ -15,14 +16,14 @@ void init_process_manager(void) {
         }
     }
 
-    // Inicializar/limpiar archivos
-    FILE* pcb_file = fopen(PCB_FILE, "w");
+    // Crear los archivos si no existen, pero no los sobrescribir si ya existen
+    FILE* pcb_file = fopen(PCB_FILE, "a+");
     if (pcb_file) fclose(pcb_file);
 
-    FILE* pt_file = fopen(PROCESS_TABLE_FILE, "w");
+    FILE* pt_file = fopen(PROCESS_TABLE_FILE, "a+");
     if (pt_file) fclose(pt_file);
 
-    FILE* history_file = fopen(BEEHIVE_HISTORY_FILE, "w");
+    FILE* history_file = fopen(BEEHIVE_HISTORY_FILE, "a+");
     if (history_file) fclose(history_file);
 }
 

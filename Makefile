@@ -45,12 +45,17 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c $(CORE_HEADERS) $(TYPE_HEADERS)
 
 # Ejecutar el programa
 run: all
+	@mkdir -p $(DATA_DIR)
 	./$(EXEC)
 
 # Limpiar archivos compilados
 clean:
 	@echo "Limpiando archivos objeto y ejecutables..."
-	@rm -rf $(OBJ_DIR) $(BIN_DIR)
+	@rm -rf $(OBJ_DIR)
+	@rm -rf $(BIN_DIR)
+
+# Target separado para limpiar datos
+clean-data:
 	@echo "Limpiando archivos de datos..."
 	@rm -f $(DATA_DIR)/*
 
