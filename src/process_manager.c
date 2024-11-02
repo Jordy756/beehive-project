@@ -1,10 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "process_manager.h"
-
-#define PCB_FILE "data/pcb.txt"
-#define PROCESS_TABLE_FILE "data/process_table.txt"
+#include "../include/core/process_manager.h"
 
 void init_process_manager(void) {
     // Create data directory if it doesn't exist

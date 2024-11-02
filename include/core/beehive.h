@@ -1,7 +1,7 @@
 #ifndef BEEHIVE_H
 #define BEEHIVE_H
 
-#include "beehive_types.h"
+#include "../types/beehive_types.h"
 
 void init_beehive(Beehive* hive, int id);
 void* bee_lifecycle(void* arg);

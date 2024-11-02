@@ -2,12 +2,17 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <signal.h>
-#include "beehive.h"
-#include "scheduler.h"
-#include "process_manager.h"
-#include "utils.h"
 
-#define MAX_BEEHIVES 40
+// Includes de tipos
+#include "../include/types/beehive_types.h"
+#include "../include/types/scheduler_types.h"
+#include "../include/types/process_manager_types.h"
+
+// Includes de core
+#include "../include/core/beehive.h"
+#include "../include/core/scheduler.h"
+#include "../include/core/process_manager.h"
+#include "../include/core/utils.h"
 
 volatile sig_atomic_t running = 1;
 Beehive* beehives[MAX_BEEHIVES];

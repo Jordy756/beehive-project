@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "scheduler.h"
-#include "utils.h"
+#include "../include/core/scheduler.h"
+#include "../include/core/utils.h"
 
 // Static variables for scheduler
 static SchedulingPolicy current_policy = ROUND_ROBIN;
@@ -10,8 +10,6 @@ static int current_quantum;
 static int quantum_counter = 0;
 static int policy_switch_counter = 0;
 static bool sort_by_bees = true;  // Toggle between sorting by bees and honey
-
-#define POLICY_SWITCH_THRESHOLD 10  // Switch policy every 10 iterations
 
 // Define job queue
 ProcessInfo* job_queue = NULL;

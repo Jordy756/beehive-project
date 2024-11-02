@@ -5,9 +5,12 @@
 #include <semaphore.h>
 #include <stdbool.h>
 #include <time.h>
+#include "process_manager_types.h"
 
+// Constantes relacionadas con las colmenas
 #define MAX_CHAMBER_SIZE 10
 #define INITIAL_BEEHIVES 1
+#define MAX_BEEHIVES 40
 #define MIN_BEES 20
 #define MAX_BEES 40
 #define MIN_HONEY 20
@@ -15,24 +18,13 @@
 #define MIN_EGGS 20
 #define MAX_EGGS 40
 #define POLEN_TO_HONEY_RATIO 10
-#define MIN_QUANTUM 2
-#define MAX_QUANTUM 10
-#define MAX_FILENAME_LENGTH 100
+#define QUEEN_BIRTH_PROBABILITY 5  // Movido desde beehive.c
 
 typedef enum {
     WORKER,
     QUEEN,
     SCOUT
 } BeeType;
-
-typedef enum {
-    READY,
-    RUNNING,
-    WAITING,
-    TERMINATED
-} ProcessState;
-
-struct Beehive;  // Forward declaration
 
 typedef struct {
     int id;
@@ -69,35 +61,18 @@ typedef struct Beehive {
     Chamber brood_chamber;
     pthread_mutex_t chamber_mutex;
     sem_t resource_sem;
-    ProcessState state;
+    ProcessState state;  // Need to forward declare ProcessState or include process_types.h
 } Beehive;
 
 typedef struct {
-    time_t arrival_time;
-    int iterations;
-    int code_stack_progress;
-    int io_wait_time;
-    double avg_io_wait_time;
-    double avg_ready_wait_time;
-    int bee_count;
-    int honey_count;
-    int egg_count;
-    int process_id;
-    int priority;
-    ProcessState state;
-    char status[20];
-} ProcessControlBlock;
+    Beehive* hive;
+    int cell_x;
+    int cell_y;
+} EggHatchingArgs;
 
 typedef struct {
-    double avg_arrival_time;
-    double avg_iterations;
-    double avg_code_progress;
-    double avg_io_wait_time;
-    double total_io_wait_time;
-    double avg_ready_wait_time;
-    double total_ready_wait_time;
-    int total_processes;
-    time_t last_update;
-} ProcessTable;
+    Bee* bee;
+    Beehive* hive;
+} BeeThreadArgs;
 
 #endif

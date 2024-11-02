@@ -2,22 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stddef.h>
-#include "beehive.h"
-#include "utils.h"
-
-#define QUEEN_BIRTH_PROBABILITY 5  // 5% chance of queen birth
-
-typedef struct {
-    Beehive* hive;
-    int cell_x;
-    int cell_y;
-} EggHatchingArgs;
-
-// Nueva estructura para pasar argumentos al thread de la abeja
-typedef struct {
-    Bee* bee;
-    Beehive* hive;
-} BeeThreadArgs;
+#include "../include/core/beehive.h"
+#include "../include/core/utils.h"
 
 void init_beehive(Beehive* hive, int id) {
     hive->id = id;

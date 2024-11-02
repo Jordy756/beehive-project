@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <unistd.h>
-#include "utils.h"
+#include "../include/core/utils.h"
 
 void init_random(void) {
     srand(time(NULL));
