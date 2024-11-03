@@ -49,7 +49,7 @@ static void distribute_initial_resources(Beehive* hive) {
     
     pthread_mutex_lock(&hive->chamber_mutex);
     
-    // Distribuir huevos en cámaras de cría
+    // Distribuir huevos solo en cámaras de cría
     for (int c = 0; c < hive->chamber_count && eggs_distributed < hive->egg_count; c++) {
         if (hive->chambers[c].is_brood_chamber) {
             for (int i = 0; i < MAX_CHAMBER_SIZE && eggs_distributed < hive->egg_count; i++) {
@@ -61,7 +61,7 @@ static void distribute_initial_resources(Beehive* hive) {
         }
     }
     
-    // Distribuir miel en cámaras de miel
+    // Distribuir miel solo en cámaras de miel
     for (int c = 0; c < hive->chamber_count && honey_distributed < hive->honey_count; c++) {
         if (!hive->chambers[c].is_brood_chamber) {
             for (int i = 0; i < MAX_CHAMBER_SIZE && honey_distributed < hive->honey_count; i++) {
@@ -81,43 +81,41 @@ void init_beehive(Beehive* hive, int id) {
     hive->bee_count = random_range(MIN_BEES, MAX_BEES);
     hive->honey_count = random_range(MIN_HONEY, MAX_HONEY);
     hive->egg_count = random_range(MIN_EGGS, MAX_EGGS);
-    hive->chamber_count = 0;  // Inicialmente sin cámaras
+    hive->chamber_count = MAX_CHAMBERS;  // Inicializamos con 20 cámaras
     
     pthread_mutex_init(&hive->chamber_mutex, NULL);
     sem_init(&hive->resource_sem, 0, 1);
     
-    // Initialize chambers (máximo 20)
-    int brood_chambers = MAX_CHAMBERS / 3;  // 1/3 para cría
-    int honey_chambers = MAX_CHAMBERS - brood_chambers;  // 2/3 para miel
-    
-    // Inicializar cámaras de cría
-    for (int i = 0; i < brood_chambers && hive->chamber_count < MAX_CHAMBERS; i++) {
-        Chamber* chamber = &hive->chambers[hive->chamber_count];
-        memset(chamber, 0, sizeof(Chamber));
-        chamber->is_brood_chamber = true;
-        init_hex_coordinates(chamber);
-        connect_hex_cells(chamber);
-        hive->chamber_count++;
+    // Inicializar todas las cámaras
+    for (int i = 0; i < MAX_CHAMBERS; i++) {
+        memset(&hive->chambers[i], 0, sizeof(Chamber));
+        
+        // Determinar si esta cámara debe ser de cría o miel
+        // Para una matriz de 4x5 cámaras:
+        // - Las posiciones [1,1], [1,2], [2,1], [2,2] son el centro
+        // - Las posiciones [3,1], [3,2] son las dos cámaras adicionales de cría debajo del centro
+        int row = i / 4;    // Fila en la matriz de 4x5
+        int col = i % 4;    // Columna en la matriz de 4x4
+        
+        // Las cámaras centrales y las dos debajo son para cría
+        bool is_center = (row == 1 || row == 2) && (col == 1 || col == 2);  // 4 cámaras centrales
+        bool is_bottom_brood = row == 3 && (col == 1 || col == 2);          // 2 cámaras inferiores
+        
+        hive->chambers[i].is_brood_chamber = is_center || is_bottom_brood;
+        
+        init_hex_coordinates(&hive->chambers[i]);
+        connect_hex_cells(&hive->chambers[i]);
     }
     
-    // Inicializar cámaras de miel
-    for (int i = 0; i < honey_chambers && hive->chamber_count < MAX_CHAMBERS; i++) {
-        Chamber* chamber = &hive->chambers[hive->chamber_count];
-        memset(chamber, 0, sizeof(Chamber));
-        chamber->is_brood_chamber = false;
-        init_hex_coordinates(chamber);
-        connect_hex_cells(chamber);
-        hive->chamber_count++;
-    }
+    // El resto del código de init_beehive se mantiene igual...
     
-    // Initialize bees with specific roles
+    // Inicializar bees con roles específicos
     hive->bees = malloc(sizeof(Bee) * hive->bee_count);
     bool has_queen = false;
     
     for (int i = 0; i < hive->bee_count; i++) {
         hive->bees[i].id = i;
         
-        // Asignar roles
         if (!has_queen) {
             hive->bees[i].role.type = QUEEN;
             has_queen = true;
@@ -153,7 +151,7 @@ void init_beehive(Beehive* hive, int id) {
         pthread_create(&hive->bees[i].thread, NULL, bee_lifecycle, args);
     }
     
-    // Distribuir huevos y miel inicial en las cámaras
+    // Distribuir recursos iniciales
     distribute_initial_resources(hive);
     
     hive->state = READY;
@@ -411,25 +409,74 @@ void cleanup_beehive(Beehive* hive) {
 
 void print_chamber_matrix(Beehive* hive) {
     printf("\nColmena #%d - Estado de las cámaras:\n", hive->id);
-    printf("Total de cámaras: %d\n", hive->chamber_count);
-    
-    for (int c = 0; c < hive->chamber_count; c++) {
-        printf("\nCámara %d (%s):\n", c, hive->chambers[c].is_brood_chamber ? "Cría" : "Miel");
-        
-        for (int i = 0; i < MAX_CHAMBER_SIZE; i++) {
-            // Añadir sangría para estructura hexagonal
-            if (i % 2 == 1) printf(" ");
-            
-            for (int j = 0; j < MAX_CHAMBER_SIZE; j++) {
-                if (hive->chambers[c].is_brood_chamber) {
-                    printf("E%d  ", hive->chambers[c].cells[i][j].eggs);
-                } else {
-                    printf("M%d  ", hive->chambers[c].cells[i][j].honey);
+    printf("Total de cámaras: %d\n\n", hive->chamber_count);
+
+    const int chambers_per_row = 4;
+    int total_rows = (hive->chamber_count + chambers_per_row - 1) / chambers_per_row;
+
+    for (int row_of_chambers = 0; row_of_chambers < total_rows; row_of_chambers++) {
+        // Para cada fila de la matriz 10x10
+        for (int matrix_row = 0; matrix_row < MAX_CHAMBER_SIZE; matrix_row++) {
+            // Imprimir la fila actual para cada cámara en esta fila
+            for (int chamber = row_of_chambers * chambers_per_row; 
+                 chamber < min((row_of_chambers + 1) * chambers_per_row, hive->chamber_count); 
+                 chamber++) {
+                // Imprimir una fila de la matriz de la cámara actual
+                for (int col = 0; col < MAX_CHAMBER_SIZE; col++) {
+                    if (hive->chambers[chamber].is_brood_chamber) {
+                        printf("H%-2d ", hive->chambers[chamber].cells[matrix_row][col].eggs);
+                    } else {
+                        printf("M%-2d ", hive->chambers[chamber].cells[matrix_row][col].honey);
+                    }
                 }
+                printf("    "); // Espacio entre cámaras
             }
             printf("\n");
         }
+        printf("\n"); // Espacio entre filas de cámaras
     }
+
+    // Imprimir totales
+    printf("\nTotales por cámara:\n");
+    for (int chamber = 0; chamber < hive->chamber_count; chamber++) {
+        if (hive->chambers[chamber].is_brood_chamber) {
+            printf("Cámara %d (Cría): ", chamber);
+            int total_eggs = 0;
+            for (int i = 0; i < MAX_CHAMBER_SIZE; i++) {
+                for (int j = 0; j < MAX_CHAMBER_SIZE; j++) {
+                    total_eggs += hive->chambers[chamber].cells[i][j].eggs;
+                }
+            }
+            printf("%d huevos\n", total_eggs);
+        } else {
+            printf("Cámara %d (Miel): ", chamber);
+            int total_honey = 0;
+            for (int i = 0; i < MAX_CHAMBER_SIZE; i++) {
+                for (int j = 0; j < MAX_CHAMBER_SIZE; j++) {
+                    total_honey += hive->chambers[chamber].cells[i][j].honey;
+                }
+            }
+            printf("%d miel\n", total_honey);
+        }
+    }
+
+    printf("\nTotales de la colmena:\n");
+    printf("Total de miel: %d\n", hive->honey_count);
+    printf("Total de huevos: %d\n", hive->egg_count);
+    printf("Total de abejas: %d\n", hive->bee_count);
+
+    // Imprimir desglose de abejas
+    int queens = 0, workers = 0, scouts = 0;
+    for (int i = 0; i < hive->bee_count; i++) {
+        if (hive->bees[i].is_alive) {
+            switch (hive->bees[i].role.type) {
+                case QUEEN: queens++; break;
+                case WORKER: workers++; break;
+                case SCOUT: scouts++; break;
+            }
+        }
+    }
+    printf("Reinas: %d, Obreras: %d, Exploradoras: %d\n", queens, workers, scouts);
 }
 
 void print_beehive_stats(Beehive* hive) {

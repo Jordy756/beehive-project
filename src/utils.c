@@ -15,3 +15,7 @@ int random_range(int min, int max) {
 void delay_ms(int milliseconds) {
     usleep(milliseconds * 1000);
 }
+
+int min(int a, int b) {
+    return (a < b) ? a : b;
+}
