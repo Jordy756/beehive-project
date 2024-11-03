@@ -61,13 +61,13 @@ static void distribute_initial_resources(Beehive* hive) {
         }
     }
     
-    // Distribuir miel solo en cámaras de miel
+    // Distribuir miel solo en cámaras de miel, de la misma manera que los huevos
     for (int c = 0; c < hive->chamber_count && honey_distributed < hive->honey_count; c++) {
         if (!hive->chambers[c].is_brood_chamber) {
             for (int i = 0; i < MAX_CHAMBER_SIZE && honey_distributed < hive->honey_count; i++) {
                 for (int j = 0; j < MAX_CHAMBER_SIZE && honey_distributed < hive->honey_count; j++) {
-                    hive->chambers[c].cells[i][j].honey = random_range(1, 5);
-                    honey_distributed += hive->chambers[c].cells[i][j].honey;
+                    hive->chambers[c].cells[i][j].honey = 1;
+                    honey_distributed++;
                 }
             }
         }
