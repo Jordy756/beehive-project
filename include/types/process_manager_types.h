@@ -17,19 +17,14 @@ typedef enum {
 } ProcessState;
 
 typedef struct {
-    time_t arrival_time;
-    int iterations;
-    int code_stack_progress;
-    int io_wait_time;
-    double avg_io_wait_time;
-    double avg_ready_wait_time;
-    int bee_count;
-    int honey_count;
-    int egg_count;
     int process_id;
-    int priority;
-    ProcessState state;
-    char status[20];
+    time_t arrival_time;         // Arrival time
+    int iterations;              // Number of iterations
+    int code_stack_progress;     // Code stack progress
+    int io_wait_time;           // I/O wait time
+    double avg_io_wait_time;    // Average I/O wait time
+    double avg_ready_wait_time; // Average ready wait time
+    ProcessState state;         // Needed for process state management
 } ProcessControlBlock;
 
 typedef struct {
@@ -37,11 +32,8 @@ typedef struct {
     double avg_iterations;
     double avg_code_progress;
     double avg_io_wait_time;
-    double total_io_wait_time;
     double avg_ready_wait_time;
-    double total_ready_wait_time;
     int total_processes;
-    time_t last_update;
 } ProcessTable;
 
 #endif
