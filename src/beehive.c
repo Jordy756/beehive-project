@@ -87,21 +87,22 @@ void init_beehive(Beehive* hive, int id) {
     sem_init(&hive->resource_sem, 0, 1);
     
     // Inicializar todas las cámaras
+    // Inicializar todas las cámaras
     for (int i = 0; i < MAX_CHAMBERS; i++) {
         memset(&hive->chambers[i], 0, sizeof(Chamber));
         
         // Determinar si esta cámara debe ser de cría o miel
-        // Para una matriz de 4x5 cámaras:
-        // - Las posiciones [1,1], [1,2], [2,1], [2,2] son el centro
-        // - Las posiciones [3,1], [3,2] son las dos cámaras adicionales de cría debajo del centro
-        int row = i / 4;    // Fila en la matriz de 4x5
-        int col = i % 4;    // Columna en la matriz de 4x4
+        // Para una matriz de 4x5 cámaras
+        int row = i / 5;    // Fila en la matriz de 4x5 (ahora usamos 5 columnas)
+        int col = i % 5;    // Columna en la matriz de 4x5
         
-        // Las cámaras centrales y las dos debajo son para cría
-        bool is_center = (row == 1 || row == 2) && (col == 1 || col == 2);  // 4 cámaras centrales
-        bool is_bottom_brood = row == 3 && (col == 1 || col == 2);          // 2 cámaras inferiores
+        // Según el patrón:
+        // Fila 0: todas miel
+        // Fila 1 y 2: miel en los extremos (col 0 y 4), huevos en el medio (col 1,2,3)
+        // Fila 3: todas miel
+        bool is_brood = (row == 1 || row == 2) && (col >= 1 && col <= 3);
         
-        hive->chambers[i].is_brood_chamber = is_center || is_bottom_brood;
+        hive->chambers[i].is_brood_chamber = is_brood;
         
         init_hex_coordinates(&hive->chambers[i]);
         connect_hex_cells(&hive->chambers[i]);
@@ -411,49 +412,50 @@ void print_chamber_matrix(Beehive* hive) {
     printf("\nColmena #%d - Estado de las cámaras:\n", hive->id);
     printf("Total de cámaras: %d\n\n", hive->chamber_count);
 
-    const int chambers_per_row = 4;
-    int total_rows = (hive->chamber_count + chambers_per_row - 1) / chambers_per_row;
-
-    for (int row_of_chambers = 0; row_of_chambers < total_rows; row_of_chambers++) {
-        // Para cada fila de la matriz 10x10
-        for (int matrix_row = 0; matrix_row < MAX_CHAMBER_SIZE; matrix_row++) {
-            // Imprimir la fila actual para cada cámara en esta fila
-            for (int chamber = row_of_chambers * chambers_per_row; 
-                 chamber < min((row_of_chambers + 1) * chambers_per_row, hive->chamber_count); 
-                 chamber++) {
-                // Imprimir una fila de la matriz de la cámara actual
-                for (int col = 0; col < MAX_CHAMBER_SIZE; col++) {
-                    if (hive->chambers[chamber].is_brood_chamber) {
-                        printf("H%-2d ", hive->chambers[chamber].cells[matrix_row][col].eggs);
+    const int ROWS = 4;
+    const int COLS = 5;
+    
+    // Iterar sobre cada fila de la matriz 10x10
+    for (int chamber_row = 0; chamber_row < ROWS; chamber_row++) {
+        // Imprimir cada fila de celdas para todas las cámaras en esta fila
+        for (int cell_row = 0; cell_row < MAX_CHAMBER_SIZE; cell_row++) {
+            // Iterar sobre cada cámara en esta fila
+            for (int chamber_col = 0; chamber_col < COLS; chamber_col++) {
+                int chamber_index = chamber_row * COLS + chamber_col;
+                
+                // Imprimir la fila de celdas para esta cámara
+                for (int cell_col = 0; cell_col < MAX_CHAMBER_SIZE; cell_col++) {
+                    if (hive->chambers[chamber_index].is_brood_chamber) {
+                        printf("H%-2d ", hive->chambers[chamber_index].cells[cell_row][cell_col].eggs);
                     } else {
-                        printf("M%-2d ", hive->chambers[chamber].cells[matrix_row][col].honey);
+                        printf("M%-2d ", hive->chambers[chamber_index].cells[cell_row][cell_col].honey);
                     }
                 }
-                printf("    "); // Espacio entre cámaras
+                printf("    ");  // Espacio entre cámaras
             }
-            printf("\n");
+            printf("\n");  // Nueva línea después de cada fila de celdas
         }
-        printf("\n"); // Espacio entre filas de cámaras
+        printf("\n");  // Espacio entre filas de cámaras
     }
 
     // Imprimir totales
     printf("\nTotales por cámara:\n");
-    for (int chamber = 0; chamber < hive->chamber_count; chamber++) {
-        if (hive->chambers[chamber].is_brood_chamber) {
-            printf("Cámara %d (Cría): ", chamber);
+    for (int i = 0; i < hive->chamber_count; i++) {
+        if (hive->chambers[i].is_brood_chamber) {
+            printf("Cámara %d (Cría): ", i);
             int total_eggs = 0;
-            for (int i = 0; i < MAX_CHAMBER_SIZE; i++) {
-                for (int j = 0; j < MAX_CHAMBER_SIZE; j++) {
-                    total_eggs += hive->chambers[chamber].cells[i][j].eggs;
+            for (int r = 0; r < MAX_CHAMBER_SIZE; r++) {
+                for (int c = 0; c < MAX_CHAMBER_SIZE; c++) {
+                    total_eggs += hive->chambers[i].cells[r][c].eggs;
                 }
             }
             printf("%d huevos\n", total_eggs);
         } else {
-            printf("Cámara %d (Miel): ", chamber);
+            printf("Cámara %d (Miel): ", i);
             int total_honey = 0;
-            for (int i = 0; i < MAX_CHAMBER_SIZE; i++) {
-                for (int j = 0; j < MAX_CHAMBER_SIZE; j++) {
-                    total_honey += hive->chambers[chamber].cells[i][j].honey;
+            for (int r = 0; r < MAX_CHAMBER_SIZE; r++) {
+                for (int c = 0; c < MAX_CHAMBER_SIZE; c++) {
+                    total_honey += hive->chambers[i].cells[r][c].honey;
                 }
             }
             printf("%d miel\n", total_honey);
@@ -465,7 +467,6 @@ void print_chamber_matrix(Beehive* hive) {
     printf("Total de huevos: %d\n", hive->egg_count);
     printf("Total de abejas: %d\n", hive->bee_count);
 
-    // Imprimir desglose de abejas
     int queens = 0, workers = 0, scouts = 0;
     for (int i = 0; i < hive->bee_count; i++) {
         if (hive->bees[i].is_alive) {
