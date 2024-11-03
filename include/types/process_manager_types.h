@@ -7,6 +7,7 @@
 // Constants
 #define PCB_FILE "data/pcb.txt"
 #define PROCESS_TABLE_FILE "data/process_table.txt"
+#define BEEHIVE_HISTORY_FILE "data/beehive_history.txt"
 #define MAX_FILENAME_LENGTH 100
 
 typedef enum {
@@ -35,5 +36,16 @@ typedef struct {
     double avg_ready_wait_time;
     int total_processes;
 } ProcessTable;
+
+// Nueva estructura para el historial de colmenas
+typedef struct {
+    int id;
+    int queens;
+    int workers;
+    int scouts;
+    int honey_count;
+    int egg_count;
+    int chamber_count;
+} BeehiveHistory;
 
 #endif

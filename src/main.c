@@ -33,33 +33,6 @@ void cleanup_all_beehives() {
     }
 }
 
-void update_beehive_file(const char* filename) {
-    FILE* file = fopen(filename, "w");
-    if (file) {
-        for (int i = 0; i < total_beehives; i++) {
-            if (beehives[i] != NULL) {
-                int queens = 0, workers = 0, scouts = 0;
-                for (int j = 0; j < beehives[i]->bee_count; j++) {
-                    if (beehives[i]->bees[j].is_alive) {
-                        switch (beehives[i]->bees[j].role.type) {
-                            case QUEEN: queens++; break;
-                            case WORKER: workers++; break;
-                            case SCOUT: scouts++; break;
-                        }
-                    }
-                }
-                fprintf(file, "%d, %d, %d, %d, %d, %d, %d\n",
-                        beehives[i]->id,
-                        queens, workers, scouts,
-                        beehives[i]->honey_count,
-                        beehives[i]->egg_count,
-                        beehives[i]->chamber_count);
-            }
-        }
-        fclose(file);
-    }
-}
-
 int main() {
     signal(SIGINT, handle_signal);
 
@@ -173,8 +146,8 @@ int main() {
             update_process_table(&pcb);
         }
         
-        // Actualizar archivo de historial
-        update_beehive_file("data/beehive_history.txt");
+        // Actualizar archivo de historial de colmenas
+        update_beehive_history(beehives, total_beehives);
         
         delay_ms(100);
     }
