@@ -33,6 +33,33 @@ void cleanup_all_beehives() {
     }
 }
 
+void update_beehive_file(const char* filename) {
+    FILE* file = fopen(filename, "w");
+    if (file) {
+        for (int i = 0; i < total_beehives; i++) {
+            if (beehives[i] != NULL) {
+                int queens = 0, workers = 0, scouts = 0;
+                for (int j = 0; j < beehives[i]->bee_count; j++) {
+                    if (beehives[i]->bees[j].is_alive) {
+                        switch (beehives[i]->bees[j].role.type) {
+                            case QUEEN: queens++; break;
+                            case WORKER: workers++; break;
+                            case SCOUT: scouts++; break;
+                        }
+                    }
+                }
+                fprintf(file, "%d, %d, %d, %d, %d, %d, %d\n",
+                        beehives[i]->id,
+                        queens, workers, scouts,
+                        beehives[i]->honey_count,
+                        beehives[i]->egg_count,
+                        beehives[i]->chamber_count);
+            }
+        }
+        fclose(file);
+    }
+}
+
 int main() {
     signal(SIGINT, handle_signal);
 
@@ -87,8 +114,10 @@ int main() {
             // Actualizar iteraciones cuando el proceso entra en ejecución
             pcb.iterations++;
             
-            // Actualizar progreso del código (ejemplo: basado en la producción de miel)
-            pcb.code_stack_progress = (current_hive->honey_count * 100) / MAX_HONEY;
+            // Actualizar progreso del código basado en cámaras y recursos
+            int total_resources = current_hive->honey_count + current_hive->egg_count;
+            int max_resources = (MAX_HONEY + MAX_EGGS) * current_hive->chamber_count;
+            pcb.code_stack_progress = (total_resources * 100) / max_resources;
             
             // Manejar tiempo de E/S cuando las abejas están recolectando polen
             if (current_hive->state == WAITING) {
@@ -123,23 +152,36 @@ int main() {
             print_beehive_stats(current_hive);
             
             if (check_new_queen(current_hive) && total_beehives < MAX_BEEHIVES) {
-                int new_id = total_beehives;
-                beehives[new_id] = malloc(sizeof(Beehive));
-                init_beehive(beehives[new_id], new_id);
-                total_beehives++;
-                printf("New beehive created! Total beehives: %d\n", total_beehives);
+                // Buscar siguiente índice disponible
+                int new_id = -1;
+                for (int j = 0; j < MAX_BEEHIVES; j++) {
+                    if (beehives[j] == NULL) {
+                        new_id = j;
+                        break;
+                    }
+                }
+                
+                if (new_id != -1) {
+                    beehives[new_id] = malloc(sizeof(Beehive));
+                    init_beehive(beehives[new_id], new_id);
+                    total_beehives++;
+                    printf("Nueva colmena creada (#%d)! Total de colmenas: %d\n", new_id, total_beehives);
+                }
             }
             
             save_pcb_to_file(&pcb);
             update_process_table(&pcb);
         }
         
+        // Actualizar archivo de historial
+        update_beehive_file("data/beehive_history.txt");
+        
         delay_ms(100);
     }
 
     // Cleanup
     cleanup_all_beehives();
-    cleanup_scheduler();  // Nueva llamada para limpiar el scheduler
+    cleanup_scheduler();
     free(process_start_times);
     free(io_start_times);
     free(ready_start_times);
