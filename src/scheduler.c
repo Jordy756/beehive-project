@@ -7,38 +7,85 @@
 // Static variables for scheduler
 static SchedulingPolicy current_policy = ROUND_ROBIN;
 static int current_quantum;
-static int quantum_counter = 0;
-static int policy_switch_counter = 0;
 static bool sort_by_bees = true;  // Toggle between sorting by bees and honey
 
 // Define job queue
 ProcessInfo* job_queue = NULL;
 int job_queue_size = 0;
 
+// Initialize scheduler control structure
+SchedulerControl scheduler_control = {0};
+
 void init_scheduler(void) {
     current_quantum = random_range(MIN_QUANTUM, MAX_QUANTUM);
     current_policy = ROUND_ROBIN;
-    quantum_counter = 0;
-    policy_switch_counter = 0;
     
     // Initialize job queue
     job_queue = malloc(sizeof(ProcessInfo) * MAX_PROCESSES);
     job_queue_size = 0;
+    
+    // Initialize scheduler control
+    pthread_mutex_init(&scheduler_control.policy_mutex, NULL);
+    pthread_cond_init(&scheduler_control.policy_change_cond, NULL);
+    scheduler_control.running = true;
+    scheduler_control.desired_policy = ROUND_ROBIN;
+    
+    // Start control thread
+    start_scheduler_control();
+}
+
+void cleanup_scheduler(void) {
+    scheduler_control.running = false;
+    pthread_cond_signal(&scheduler_control.policy_change_cond);
+    pthread_join(scheduler_control.control_thread, NULL);
+    pthread_mutex_destroy(&scheduler_control.policy_mutex);
+    pthread_cond_destroy(&scheduler_control.policy_change_cond);
+    free(job_queue);
+}
+
+void* scheduler_control_thread(void* arg) {
+    (void)arg; // Unused parameter
+    
+    while (scheduler_control.running) {
+        pthread_mutex_lock(&scheduler_control.policy_mutex);
+        pthread_cond_wait(&scheduler_control.policy_change_cond, &scheduler_control.policy_mutex);
+        
+        if (scheduler_control.running && current_policy != scheduler_control.desired_policy) {
+            current_policy = scheduler_control.desired_policy;
+            
+            if (current_policy == SHORTEST_JOB_FIRST) {
+                sort_by_bees = !sort_by_bees;
+            }
+            
+            printf("Switched to %s", current_policy == ROUND_ROBIN ? "Round Robin" : "Shortest Job First");
+            if (current_policy != ROUND_ROBIN) {
+                printf(" (Sort by: %s)\n", sort_by_bees ? "Bees" : "Honey");
+            } else {
+                printf("\n");
+            }
+        }
+        
+        pthread_mutex_unlock(&scheduler_control.policy_mutex);
+        delay_ms(100); // Small delay to prevent busy waiting
+    }
+    
+    return NULL;
+}
+
+void start_scheduler_control(void) {
+    pthread_create(&scheduler_control.control_thread, NULL, scheduler_control_thread, NULL);
+}
+
+void request_policy_change(SchedulingPolicy new_policy) {
+    pthread_mutex_lock(&scheduler_control.policy_mutex);
+    scheduler_control.desired_policy = new_policy;
+    pthread_cond_signal(&scheduler_control.policy_change_cond);
+    pthread_mutex_unlock(&scheduler_control.policy_mutex);
 }
 
 void switch_scheduling_policy(void) {
-    current_policy = (current_policy == ROUND_ROBIN) ? SHORTEST_JOB_FIRST : ROUND_ROBIN;
-    
-    if (current_policy == SHORTEST_JOB_FIRST) {
-        sort_by_bees = !sort_by_bees;
-    }
-    
-    printf("Switched to %s", current_policy == ROUND_ROBIN ? "Round Robin" : "Shortest Job First");
-    if (current_policy != ROUND_ROBIN ) {
-        printf(" (Sort by: %s)\n", sort_by_bees ? "Bees" : "Honey");
-    } else {
-        printf("\n");
-    }
+    SchedulingPolicy new_policy = (current_policy == ROUND_ROBIN) ? SHORTEST_JOB_FIRST : ROUND_ROBIN;
+    request_policy_change(new_policy);
 }
 
 void sort_processes_sjf(ProcessInfo* processes, int count, bool by_bees) {
@@ -86,6 +133,7 @@ void update_job_queue(Beehive** beehives, int total_beehives) {
 }
 
 void schedule_process(ProcessControlBlock* pcb) {
+    static int policy_switch_counter = 0;
     policy_switch_counter++;
     
     // Check if we should switch policies
@@ -95,6 +143,7 @@ void schedule_process(ProcessControlBlock* pcb) {
     }
     
     if (current_policy == ROUND_ROBIN) {
+        static int quantum_counter = 0;
         quantum_counter++;
         if (quantum_counter >= current_quantum) {
             update_quantum();

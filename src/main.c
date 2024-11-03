@@ -35,16 +35,16 @@ void cleanup_all_beehives() {
 
 int main() {
     signal(SIGINT, handle_signal);
-   
+
     init_random();
     init_scheduler();
     init_process_manager();
-   
+
     // Initialize beehives array
     for (int i = 0; i < MAX_BEEHIVES; i++) {
         beehives[i] = NULL;
     }
-   
+
     // Create initial beehive
     beehives[0] = malloc(sizeof(Beehive));
     init_beehive(beehives[0], 0);
@@ -56,7 +56,7 @@ int main() {
     time_t* ready_start_times = calloc(MAX_BEEHIVES, sizeof(time_t));
     int* ready_wait_counts = calloc(MAX_BEEHIVES, sizeof(int));
     int* io_wait_counts = calloc(MAX_BEEHIVES, sizeof(int));
-   
+
     ProcessControlBlock pcb = {
         .process_id = 0,
         .arrival_time = time(NULL),
@@ -67,14 +67,14 @@ int main() {
         .avg_ready_wait_time = 0.0,
         .state = READY
     };
-   
+
     while (running) {
         update_job_queue(beehives, total_beehives);
-       
+        
         for (int i = 0; i < job_queue_size; i++) {
             int current_index = job_queue[i].index;
             Beehive* current_hive = beehives[current_index];
-           
+            
             // Actualizar PCB para el proceso actual
             pcb.process_id = current_index;
             
@@ -108,7 +108,7 @@ int main() {
                 }
             } else if (ready_start_times[current_index] != 0) {
                 time_t ready_time = time(NULL) - ready_start_times[current_index];
-                pcb.avg_ready_wait_time = ((pcb.avg_ready_wait_time * ready_wait_counts[current_index]) + ready_time) / 
+                pcb.avg_ready_wait_time = ((pcb.avg_ready_wait_time * ready_wait_counts[current_index]) + ready_time) /
                                         (ready_wait_counts[current_index] + 1);
                 ready_wait_counts[current_index]++;
                 ready_start_times[current_index] = 0;
@@ -121,7 +121,7 @@ int main() {
             
             schedule_process(&pcb);
             print_beehive_stats(current_hive);
-           
+            
             if (check_new_queen(current_hive) && total_beehives < MAX_BEEHIVES) {
                 int new_id = total_beehives;
                 beehives[new_id] = malloc(sizeof(Beehive));
@@ -136,14 +136,15 @@ int main() {
         
         delay_ms(100);
     }
-   
+
     // Cleanup
     cleanup_all_beehives();
-    free(job_queue);
+    cleanup_scheduler();  // Nueva llamada para limpiar el scheduler
     free(process_start_times);
     free(io_start_times);
     free(ready_start_times);
     free(ready_wait_counts);
     free(io_wait_counts);
+    
     return 0;
 }
