@@ -2,11 +2,13 @@
 #define PROCESS_MANAGER_TYPES_H
 
 #include <time.h>
+#include <stdbool.h>
 
+// Constants
 #define PCB_FILE "data/pcb.txt"
 #define PROCESS_TABLE_FILE "data/process_table.txt"
 #define BEEHIVE_HISTORY_FILE "data/beehive_history.txt"
-#define MAX_HISTORY_ENTRIES 1000
+#define MAX_FILENAME_LENGTH 100
 
 typedef enum {
     READY,
@@ -16,24 +18,14 @@ typedef enum {
 } ProcessState;
 
 typedef struct {
-    int beehive_id;
-    int bee_count;
-    int honey_count;
-    int egg_count;
-    time_t timestamp;
-} BeehiveHistoryEntry;
-
-typedef struct {
-    time_t arrival_time;
-    int iterations;
-    int code_stack_progress;
-    int io_wait_time;
-    double avg_io_wait_time;
-    double avg_ready_wait_time;
     int process_id;
-    int priority;
-    ProcessState state;
-    char status[20];
+    time_t arrival_time;         // Arrival time
+    int iterations;              // Number of iterations
+    int code_stack_progress;     // Code stack progress
+    int io_wait_time;           // I/O wait time
+    double avg_io_wait_time;    // Average I/O wait time
+    double avg_ready_wait_time; // Average ready wait time
+    ProcessState state;         // Needed for process state management
 } ProcessControlBlock;
 
 typedef struct {
@@ -41,11 +33,19 @@ typedef struct {
     double avg_iterations;
     double avg_code_progress;
     double avg_io_wait_time;
-    double total_io_wait_time;
     double avg_ready_wait_time;
-    double total_ready_wait_time;
     int total_processes;
-    time_t last_update;
 } ProcessTable;
+
+// Nueva estructura para el historial de colmenas
+typedef struct {
+    int id;
+    int queens;
+    int workers;
+    int scouts;
+    int honey_count;
+    int egg_count;
+    int chamber_count;
+} BeehiveHistory;
 
 #endif
