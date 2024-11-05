@@ -20,4 +20,9 @@ void deposit_polen(Beehive* hive, int polen_amount);
 void* egg_hatching_thread(void* arg);
 void print_chamber_matrix(Beehive* hive);
 
+// Nuevas funciones para manejo de recursos
+bool can_add_eggs(Beehive* hive, int amount);
+bool can_add_honey(Beehive* hive, int amount);
+void update_beehive_resources(Beehive* hive);
+
 #endif

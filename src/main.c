@@ -56,6 +56,7 @@ int main() {
     time_t* ready_start_times = calloc(MAX_BEEHIVES, sizeof(time_t));
     int* ready_wait_counts = calloc(MAX_BEEHIVES, sizeof(int));
     int* io_wait_counts = calloc(MAX_BEEHIVES, sizeof(int));
+    time_t last_resource_check = time(NULL);  // Nueva variable para control de recursos
 
     ProcessControlBlock pcb = {
         .process_id = 0,
@@ -71,6 +72,17 @@ int main() {
     while (running) {
         update_job_queue(beehives, total_beehives);
         
+        // Verificar y actualizar recursos cada segundo
+        time_t current_time = time(NULL);
+        if (difftime(current_time, last_resource_check) >= 1.0) {
+            for (int i = 0; i < total_beehives; i++) {
+                if (beehives[i] != NULL) {
+                    update_beehive_resources(beehives[i]);
+                }
+            }
+            last_resource_check = current_time;
+        }
+        
         for (int i = 0; i < job_queue_size; i++) {
             int current_index = job_queue[i].index;
             Beehive* current_hive = beehives[current_index];
@@ -80,7 +92,7 @@ int main() {
             
             // Si es un proceso nuevo, establecer su tiempo de llegada
             if (process_start_times[current_index] == 0) {
-                process_start_times[current_index] = time(NULL);
+                process_start_times[current_index] = current_time;
                 pcb.arrival_time = process_start_times[current_index];
             }
 
@@ -89,16 +101,16 @@ int main() {
             
             // Actualizar progreso del código basado en cámaras y recursos
             int total_resources = current_hive->honey_count + current_hive->egg_count;
-            int max_resources = (MAX_HONEY + MAX_EGGS) * current_hive->chamber_count;
+            int max_resources = (MAX_TOTAL_HONEY + MAX_TOTAL_EGGS);  // Usar los nuevos límites máximos
             pcb.code_stack_progress = (total_resources * 100) / max_resources;
             
             // Manejar tiempo de E/S cuando las abejas están recolectando polen
             if (current_hive->state == WAITING) {
                 if (io_start_times[current_index] == 0) {
-                    io_start_times[current_index] = time(NULL);
+                    io_start_times[current_index] = current_time;
                 }
             } else if (io_start_times[current_index] != 0) {
-                pcb.io_wait_time += time(NULL) - io_start_times[current_index];
+                pcb.io_wait_time += current_time - io_start_times[current_index];
                 io_wait_counts[current_index]++;
                 io_start_times[current_index] = 0;
             }
@@ -106,10 +118,10 @@ int main() {
             // Manejar tiempo en estado listo
             if (current_hive->state == READY) {
                 if (ready_start_times[current_index] == 0) {
-                    ready_start_times[current_index] = time(NULL);
+                    ready_start_times[current_index] = current_time;
                 }
             } else if (ready_start_times[current_index] != 0) {
-                time_t ready_time = time(NULL) - ready_start_times[current_index];
+                time_t ready_time = current_time - ready_start_times[current_index];
                 pcb.avg_ready_wait_time = ((pcb.avg_ready_wait_time * ready_wait_counts[current_index]) + ready_time) /
                                         (ready_wait_counts[current_index] + 1);
                 ready_wait_counts[current_index]++;
@@ -124,6 +136,7 @@ int main() {
             schedule_process(&pcb);
             print_beehive_stats(current_hive);
             
+            // Verificar nacimiento de nueva reina y creación de nueva colmena
             if (check_new_queen(current_hive) && total_beehives < MAX_BEEHIVES) {
                 // Buscar siguiente índice disponible
                 int new_id = -1;

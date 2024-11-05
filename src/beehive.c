@@ -164,33 +164,37 @@ void queen_behavior(Bee* bee) {
     time_t current_time = time(NULL);
     
     // La reina pone huevos cada cierto tiempo
-    if (difftime(current_time, bee->role.role_data.queen.last_egg_time) >= 5.0) {  // 5 segundos entre huevos
+    if (difftime(current_time, bee->role.role_data.queen.last_egg_time) >= EGG_LAYING_INTERVAL) {
         pthread_mutex_lock(&hive->chamber_mutex);
         
-        // Buscar una celda vacía en una cámara de cría
-        for (int c = 0; c < hive->chamber_count; c++) {
-            if (hive->chambers[c].is_brood_chamber) {
-                for (int i = 0; i < MAX_CHAMBER_SIZE; i++) {
-                    for (int j = 0; j < MAX_CHAMBER_SIZE; j++) {
-                        if (hive->chambers[c].cells[i][j].eggs == 0) {
-                            hive->chambers[c].cells[i][j].eggs = 1;
-                            hive->egg_count++;
-                            bee->role.role_data.queen.eggs_laid++;
-                            bee->role.role_data.queen.last_egg_time = current_time;
-                            
-                            // Crear thread para eclosión
-                            EggHatchingArgs* args = malloc(sizeof(EggHatchingArgs));
-                            args->hive = hive;
-                            args->chamber_index = c;
-                            args->cell_x = i;
-                            args->cell_y = j;
-                            
-                            pthread_t hatching_thread;
-                            pthread_create(&hatching_thread, NULL, egg_hatching_thread, args);
-                            pthread_detach(hatching_thread);
-                            
-                            pthread_mutex_unlock(&hive->chamber_mutex);
-                            return;
+        // Verificar límite de huevos
+        if (can_add_eggs(hive, 1)) {
+            // Buscar una celda vacía en una cámara de cría
+            for (int c = 0; c < hive->chamber_count; c++) {
+                if (hive->chambers[c].is_brood_chamber) {
+                    for (int i = 0; i < MAX_CHAMBER_SIZE; i++) {
+                        for (int j = 0; j < MAX_CHAMBER_SIZE; j++) {
+                            if (hive->chambers[c].cells[i][j].eggs == 0) {
+                                hive->chambers[c].cells[i][j].eggs = 1;
+                                hive->egg_count++;
+                                bee->role.role_data.queen.eggs_laid++;
+                                bee->role.role_data.queen.last_egg_time = current_time;
+                                
+                                // Crear thread para eclosión
+                                EggHatchingArgs* args = malloc(sizeof(EggHatchingArgs));
+                                args->hive = hive;
+                                args->chamber_index = c;
+                                args->cell_x = i;
+                                args->cell_y = j;
+                                
+                                pthread_t hatching_thread;
+                                pthread_create(&hatching_thread, NULL, egg_hatching_thread, args);
+                                pthread_detach(hatching_thread);
+                                
+                                printf("Huevo puesto en colmena %d\n", hive->id);
+                                pthread_mutex_unlock(&hive->chamber_mutex);
+                                return;
+                            }
                         }
                     }
                 }
@@ -204,7 +208,7 @@ void queen_behavior(Bee* bee) {
 void worker_behavior(Bee* bee) {
     if (bee->polen_collected < bee->max_polen_capacity) {
         int polen = random_range(1, 5);
-        delay_ms(random_range(1, 5));  // Tiempo recolectando polen
+        delay_ms(random_range(100, 500));  // Tiempo recolectando polen
         
         bee->polen_collected += polen;
         bee->role.role_data.worker.polen_carried += polen;
@@ -212,6 +216,8 @@ void worker_behavior(Bee* bee) {
         if (bee->polen_collected >= bee->max_polen_capacity) {
             deposit_polen(bee->hive, bee->polen_collected);
             bee->role.role_data.worker.honey_produced += bee->polen_collected / POLEN_TO_HONEY_RATIO;
+            printf("Miel producida en colmena %d: %d unidades\n", bee->hive->id, 
+                   bee->polen_collected / POLEN_TO_HONEY_RATIO);
             bee->polen_collected = 0;
         }
     }
@@ -242,25 +248,46 @@ void scout_behavior(Bee* bee) {
 void* bee_lifecycle(void* arg) {
     BeeThreadArgs* args = (BeeThreadArgs*)arg;
     Bee* bee = args->bee;
-    int max_polen = random_range(100, 150);
+    Beehive* hive = args->hive;
     
-    while (bee->is_alive && bee->polen_collected < max_polen) {
+    // Determinar la cantidad máxima de polen que recolectará en su vida
+    int max_polen_lifetime = random_range(100, 150);
+    int total_polen_collected = 0;  // Para tracking del polen total en su vida
+    
+    while (bee->is_alive && total_polen_collected < max_polen_lifetime) {
         switch (bee->role.type) {
             case QUEEN:
                 queen_behavior(bee);
                 break;
             case WORKER:
                 worker_behavior(bee);
+                if (bee->polen_collected > 0) {
+                    total_polen_collected += bee->polen_collected;
+                    printf("Abeja %d de colmena %d: polen total recolectado %d/%d\n", 
+                           bee->id, hive->id, total_polen_collected, max_polen_lifetime);
+                }
                 break;
             case SCOUT:
                 scout_behavior(bee);
+                if (bee->polen_collected > 0) {
+                    total_polen_collected += bee->polen_collected;
+                    printf("Scout %d de colmena %d: polen total recolectado %d/%d\n", 
+                           bee->id, hive->id, total_polen_collected, max_polen_lifetime);
+                }
                 break;
         }
         
-        delay_ms(random_range(1, 5));
+        delay_ms(random_range(100, 500));
     }
     
+    // La abeja muere después de alcanzar su límite de polen
+    pthread_mutex_lock(&hive->chamber_mutex);
     bee->is_alive = false;
+    hive->bee_count--;
+    printf("Abeja %d de colmena %d murió después de recolectar %d unidades de polen\n", 
+           bee->id, hive->id, total_polen_collected);
+    pthread_mutex_unlock(&hive->chamber_mutex);
+    
     free(args);
     return NULL;
 }
@@ -271,17 +298,24 @@ void deposit_polen(Beehive* hive, int polen_amount) {
     // Convertir polen a miel (10:1 ratio)
     int honey_produced = polen_amount / POLEN_TO_HONEY_RATIO;
     
-    if (honey_produced > 0) {
+    if (honey_produced > 0 && can_add_honey(hive, honey_produced)) {
         // Buscar una cámara de miel con espacio disponible
         for (int c = 0; c < hive->chamber_count; c++) {
             if (!hive->chambers[c].is_brood_chamber) {
                 for (int i = 0; i < MAX_CHAMBER_SIZE; i++) {
                     for (int j = 0; j < MAX_CHAMBER_SIZE; j++) {
                         if (hive->chambers[c].cells[i][j].honey < 10) {  // Límite por celda
-                            hive->chambers[c].cells[i][j].honey += honey_produced;
-                            hive->honey_count += honey_produced;
-                            pthread_mutex_unlock(&hive->chamber_mutex);
-                            return;
+                            int space_available = 10 - hive->chambers[c].cells[i][j].honey;
+                            int honey_to_add = min(honey_produced, space_available);
+                            
+                            hive->chambers[c].cells[i][j].honey += honey_to_add;
+                            hive->honey_count += honey_to_add;
+                            honey_produced -= honey_to_add;
+                            
+                            if (honey_produced <= 0) {
+                                pthread_mutex_unlock(&hive->chamber_mutex);
+                                return;
+                            }
                         }
                     }
                 }
@@ -292,51 +326,83 @@ void deposit_polen(Beehive* hive, int polen_amount) {
     pthread_mutex_unlock(&hive->chamber_mutex);
 }
 
+bool can_add_eggs(Beehive* hive, int amount) {
+    return (hive->egg_count + amount) <= MAX_TOTAL_EGGS;
+}
+
+bool can_add_honey(Beehive* hive, int amount) {
+    return (hive->honey_count + amount) <= MAX_TOTAL_HONEY;
+}
+
+void update_beehive_resources(Beehive* hive) {
+    pthread_mutex_lock(&hive->chamber_mutex);
+    
+    // Actualizar tiempo de última actividad
+    hive->last_activity_time = time(NULL);
+    
+    // Verificar y ajustar recursos si exceden los límites
+    if (hive->egg_count > MAX_TOTAL_EGGS) {
+        hive->egg_count = MAX_TOTAL_EGGS;
+    }
+    
+    if (hive->honey_count > MAX_TOTAL_HONEY) {
+        hive->honey_count = MAX_TOTAL_HONEY;
+    }
+    
+    pthread_mutex_unlock(&hive->chamber_mutex);
+}
+
 void* egg_hatching_thread(void* arg) {
     EggHatchingArgs* args = (EggHatchingArgs*)arg;
-    delay_ms(random_range(1, 10));  // Tiempo de eclosión
+    delay_ms(random_range(1000, 10000));  // Tiempo de eclosión entre 1 y 10 segundos
     
     pthread_mutex_lock(&args->hive->chamber_mutex);
     
     if (args->hive->chambers[args->chamber_index].cells[args->cell_x][args->cell_y].eggs > 0) {
         args->hive->chambers[args->chamber_index].cells[args->cell_x][args->cell_y].eggs--;
         args->hive->egg_count--;
-        args->hive->bee_count++;
         
         // Crear nueva abeja
-        int new_bee_index = args->hive->bee_count - 1;
-        args->hive->bees = realloc(args->hive->bees, sizeof(Bee) * args->hive->bee_count);
-        
-        Bee* new_bee = &args->hive->bees[new_bee_index];
-        new_bee->id = new_bee_index;
-        
-        // Asignar rol (nunca reina de huevo)
-        new_bee->role.type = (random_range(1, 100) <= 20) ? SCOUT : WORKER;
-        
-        // Inicializar datos del rol
-        switch (new_bee->role.type) {
-            case WORKER:
-                new_bee->role.role_data.worker.honey_produced = 0;
-                new_bee->role.role_data.worker.polen_carried = 0;
-                break;
-            case SCOUT:
-                new_bee->role.role_data.scout.found_food_source = false;
-                new_bee->role.role_data.scout.discovered_locations = 0;
-                break;
-            default:
-                break;
+        Bee* new_bees = realloc(args->hive->bees, sizeof(Bee) * (args->hive->bee_count + 1));
+        if (new_bees != NULL) {
+            args->hive->bees = new_bees;
+            Bee* new_bee = &args->hive->bees[args->hive->bee_count];
+            
+            new_bee->id = args->hive->bee_count;
+            new_bee->role.type = (random_range(1, 100) <= 20) ? SCOUT : WORKER;
+            new_bee->polen_collected = 0;
+            new_bee->max_polen_capacity = random_range(1, 5);
+            new_bee->is_alive = true;
+            new_bee->hive = args->hive;
+            new_bee->creation_time = time(NULL);
+            
+            // Inicializar datos específicos del rol
+            switch (new_bee->role.type) {
+                case WORKER:
+                    new_bee->role.role_data.worker.honey_produced = 0;
+                    new_bee->role.role_data.worker.polen_carried = 0;
+                    new_bee->role.role_data.worker.last_collection_time = time(NULL);
+                    break;
+                case SCOUT:
+                    new_bee->role.role_data.scout.found_food_source = false;
+                    new_bee->role.role_data.scout.discovered_locations = 0;
+                    new_bee->role.role_data.scout.last_search_time = time(NULL);
+                    break;
+                default:
+                    break;
+            }
+            
+            // Crear y ejecutar el thread para la nueva abeja
+            BeeThreadArgs* bee_args = malloc(sizeof(BeeThreadArgs));
+            bee_args->bee = new_bee;
+            bee_args->hive = args->hive;
+            
+            pthread_create(&new_bee->thread, NULL, bee_lifecycle, bee_args);
+            args->hive->bee_count++;
+            
+            printf("Nueva abeja nacida en colmena %d (total: %d)\n", 
+                   args->hive->id, args->hive->bee_count);
         }
-        
-        new_bee->polen_collected = 0;
-        new_bee->max_polen_capacity = random_range(1, 5);
-        new_bee->is_alive = true;
-        new_bee->hive = args->hive;
-        
-        BeeThreadArgs* bee_args = malloc(sizeof(BeeThreadArgs));
-        bee_args->bee = new_bee;
-        bee_args->hive = args->hive;
-        
-        pthread_create(&new_bee->thread, NULL, bee_lifecycle, bee_args);
     }
     
     pthread_mutex_unlock(&args->hive->chamber_mutex);

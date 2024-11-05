@@ -18,8 +18,12 @@
 #define MAX_HONEY 40
 #define MIN_EGGS 20
 #define MAX_EGGS 40
+#define MAX_TOTAL_HONEY 1400  // Nuevo: límite máximo de miel por colmena
+#define MAX_TOTAL_EGGS 600    // Nuevo: límite máximo de huevos por colmena
 #define POLEN_TO_HONEY_RATIO 10
 #define QUEEN_BIRTH_PROBABILITY 5
+#define EGG_LAYING_INTERVAL 5  // Nuevo: intervalo en segundos para poner huevos
+#define HONEY_PRODUCTION_RATE 2 // Nuevo: tasa de producción de miel
 
 // Direcciones para la estructura hexagonal
 typedef enum {
@@ -46,14 +50,17 @@ typedef struct {
         struct {  // Para QUEEN
             int eggs_laid;
             time_t last_egg_time;
+            int egg_laying_rate;  // Nuevo: tasa de puesta de huevos
         } queen;
         struct {  // Para WORKER
             int honey_produced;
             int polen_carried;
+            time_t last_collection_time;  // Nuevo: tiempo de última recolección
         } worker;
         struct {  // Para SCOUT
             bool found_food_source;
             int discovered_locations;
+            time_t last_search_time;  // Nuevo: tiempo de última búsqueda
         } scout;
     } role_data;
 } BeeRole;
@@ -66,6 +73,7 @@ typedef struct {
     bool is_alive;
     pthread_t thread;
     struct Beehive* hive;  // Reference to parent hive
+    time_t creation_time;  // Nuevo: tiempo de creación de la abeja
 } Bee;
 
 // Estructura hexagonal para las celdas
@@ -101,6 +109,7 @@ typedef struct Beehive {
     pthread_mutex_t chamber_mutex;
     sem_t resource_sem;
     ProcessState state;
+    time_t last_activity_time;  // Nuevo: tiempo de última actividad
 } Beehive;
 
 typedef struct {
