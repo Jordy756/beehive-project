@@ -344,38 +344,6 @@ void* egg_hatching_thread(void* arg) {
     return NULL;
 }
 
-void process_honey_production(Beehive* hive) {
-    pthread_mutex_lock(&hive->chamber_mutex);
-    // La producción de miel se maneja ahora en deposit_polen y los comportamientos específicos
-    pthread_mutex_unlock(&hive->chamber_mutex);
-}
-
-void process_egg_hatching(Beehive* hive) {
-    pthread_mutex_lock(&hive->chamber_mutex);
-    
-    for (int c = 0; c < hive->chamber_count; c++) {
-        if (hive->chambers[c].is_brood_chamber) {
-            for (int i = 0; i < MAX_CHAMBER_SIZE; i++) {
-                for (int j = 0; j < MAX_CHAMBER_SIZE; j++) {
-                    if (hive->chambers[c].cells[i][j].eggs > 0) {
-                        EggHatchingArgs* args = malloc(sizeof(EggHatchingArgs));
-                        args->hive = hive;
-                        args->chamber_index = c;
-                        args->cell_x = i;
-                        args->cell_y = j;
-                        
-                        pthread_t hatching_thread;
-                        pthread_create(&hatching_thread, NULL, egg_hatching_thread, args);
-                        pthread_detach(hatching_thread);
-                    }
-                }
-            }
-        }
-    }
-    
-    pthread_mutex_unlock(&hive->chamber_mutex);
-}
-
 bool check_new_queen(Beehive* hive) {
     pthread_mutex_lock(&hive->chamber_mutex);
     
@@ -409,8 +377,7 @@ void cleanup_beehive(Beehive* hive) {
 }
 
 void print_chamber_matrix(Beehive* hive) {
-    printf("\nColmena #%d - Estado de las cámaras:\n", hive->id);
-    printf("Total de cámaras: %d\n\n", hive->chamber_count);
+    printf("Cámaras: %d\n\n", hive->chamber_count);
 
     const int ROWS = 4;
     const int COLS = 5;
@@ -461,23 +428,6 @@ void print_chamber_matrix(Beehive* hive) {
             printf("%d miel\n", total_honey);
         }
     }
-
-    printf("\nTotales de la colmena:\n");
-    printf("Total de miel: %d\n", hive->honey_count);
-    printf("Total de huevos: %d\n", hive->egg_count);
-    printf("Total de abejas: %d\n", hive->bee_count);
-
-    int queens = 0, workers = 0, scouts = 0;
-    for (int i = 0; i < hive->bee_count; i++) {
-        if (hive->bees[i].is_alive) {
-            switch (hive->bees[i].role.type) {
-                case QUEEN: queens++; break;
-                case WORKER: workers++; break;
-                case SCOUT: scouts++; break;
-            }
-        }
-    }
-    printf("Reinas: %d, Obreras: %d, Exploradoras: %d\n", queens, workers, scouts);
 }
 
 void print_beehive_stats(Beehive* hive) {
@@ -501,7 +451,6 @@ void print_beehive_stats(Beehive* hive) {
     printf("- Exploradoras: %d\n", scouts);
     printf("Miel total: %d\n", hive->honey_count);
     printf("Huevos totales: %d\n", hive->egg_count);
-    printf("Número de cámaras: %d\n", hive->chamber_count);
     
     print_chamber_matrix(hive);
 }

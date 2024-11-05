@@ -151,37 +151,3 @@ void save_beehive_history(BeehiveHistory* history) {
         fclose(file);
     }
 }
-
-BeehiveHistory* load_beehive_history(int beehive_id) {
-    FILE* file = fopen(BEEHIVE_HISTORY_FILE, "r");
-    BeehiveHistory* history = malloc(sizeof(BeehiveHistory));
-    char line[256];
-    bool found = false;
-    
-    if (file) {
-        while (fgets(line, sizeof(line), file)) {
-            int id;
-            sscanf(line, "%d,", &id);
-            if (id == beehive_id) {
-                sscanf(line, "%d,%d,%d,%d,%d,%d,%d",
-                       &history->id,
-                       &history->queens,
-                       &history->workers,
-                       &history->scouts,
-                       &history->honey_count,
-                       &history->egg_count,
-                       &history->chamber_count);
-                found = true;
-                break;
-            }
-        }
-        fclose(file);
-    }
-    
-    if (!found) {
-        memset(history, 0, sizeof(BeehiveHistory));
-        history->id = beehive_id;
-    }
-    
-    return history;
-}

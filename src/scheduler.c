@@ -108,12 +108,6 @@ void sort_processes_sjf(ProcessInfo* processes, int count, bool by_bees) {
     }
 }
 
-void update_process_info(ProcessInfo* info, ProcessControlBlock* pcb, Beehive* hive, int index) {
-    info->pcb = pcb;
-    info->hive = hive;
-    info->index = index;
-}
-
 void update_job_queue(Beehive** beehives, int total_beehives) {
     job_queue_size = 0;
     
@@ -157,12 +151,4 @@ void schedule_process(ProcessControlBlock* pcb) {
 void update_quantum(void) {
     current_quantum = random_range(MIN_QUANTUM, MAX_QUANTUM);
     printf("New quantum: %d\n", current_quantum);
-}
-
-SchedulingPolicy get_current_policy(void) {
-    return current_policy;
-}
-
-int get_current_quantum(void) {
-    return current_quantum;
 }
