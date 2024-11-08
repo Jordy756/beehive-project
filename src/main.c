@@ -21,9 +21,11 @@ int total_beehives = 0;
 void handle_signal(int sig) {
     (void)sig;  // Avoid unused parameter warning
     running = 0;
+    printf("\nFinalizando la simulación...\n");
 }
 
 void cleanup_all_beehives() {
+    printf("Limpiando todas las colmenas...\n");
     for (int i = 0; i < total_beehives; i++) {
         if (beehives[i] != NULL) {
             cleanup_beehive(beehives[i]);
@@ -34,7 +36,12 @@ void cleanup_all_beehives() {
 }
 
 int main() {
-    signal(SIGINT, handle_signal);
+    // Configurar el manejador de señales para SIGINT (Ctrl+C)
+    struct sigaction sa;
+    sa.sa_handler = handle_signal;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = 0;
+    sigaction(SIGINT, &sa, NULL);
     
     init_random();
     init_scheduler();
@@ -61,37 +68,46 @@ int main() {
         .state = READY
     };
     
+    printf("Simulación iniciada. Presione Ctrl+C para finalizar.\n");
+    
     while (running) {
         // Update job queue with current beehives
         update_job_queue(beehives, total_beehives);
         
         // Process beehives in the determined order
-        for (int i = 0; i < job_queue_size; i++) {
+        for (int i = 0; i < job_queue_size && running; i++) {
             int current_index = job_queue[i].index;
             Beehive* current_hive = beehives[current_index];
             
-            pcb.process_id = current_index;
-            
-            schedule_process(&pcb);
-            print_beehive_stats(current_hive);
-            
-            // Check for new queen and create new beehive if possible
-            if (check_new_queen(current_hive) && total_beehives < MAX_BEEHIVES) {
-                int new_id = total_beehives;
-                beehives[new_id] = malloc(sizeof(Beehive));
-                init_beehive(beehives[new_id], new_id);
-                total_beehives++;
+            if (current_hive != NULL) {
+                pcb.process_id = current_index;
                 
-                printf("New beehive created! Total beehives: %d\n", total_beehives);
+                schedule_process(&pcb);
+                print_beehive_stats(current_hive);
+                
+                // Check for new queen and create new beehive if possible
+                if (check_new_queen(current_hive) && total_beehives < MAX_BEEHIVES) {
+                    int new_id = total_beehives;
+                    beehives[new_id] = malloc(sizeof(Beehive));
+                    init_beehive(beehives[new_id], new_id);
+                    total_beehives++;
+                    
+                    printf("\n¡Nueva colmena creada! Total de colmenas: %d\n", total_beehives);
+                }
             }
         }
         
         save_pcb_to_file(&pcb);
         update_process_table(&pcb);
+        
+        // Añadir un pequeño retraso para no sobrecargar el CPU
         delay_ms(100);
     }
     
+    // Limpieza final
     cleanup_all_beehives();
-    free(job_queue);  // Clean up job queue
+    free(job_queue);
+    
+    printf("Simulación finalizada.\n");
     return 0;
 }
