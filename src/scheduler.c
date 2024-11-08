@@ -33,9 +33,9 @@ void switch_scheduling_policy(void) {
         sort_by_bees = !sort_by_bees;
     }
     
-    printf("Switched to %s", current_policy == ROUND_ROBIN ? "Round Robin" : "Shortest Job First");
+    printf("Cambiado a %s", current_policy == ROUND_ROBIN ? "Round Robin" : "Primero el trabajo más corto");
     if (current_policy != ROUND_ROBIN ) {
-        printf(" (Sort by: %s)\n", sort_by_bees ? "Bees" : "Honey");
+        printf(" (Sort by: %s)\n", sort_by_bees ? "Abejas" : "Miel");
     } else {
         printf("\n");
     }
@@ -59,12 +59,6 @@ void sort_processes_sjf(ProcessInfo* processes, int count, bool by_bees) {
             }
         }
     }
-}
-
-void update_process_info(ProcessInfo* info, ProcessControlBlock* pcb, Beehive* hive, int index) {
-    info->pcb = pcb;
-    info->hive = hive;
-    info->index = index;
 }
 
 void update_job_queue(Beehive** beehives, int total_beehives) {
@@ -108,12 +102,4 @@ void schedule_process(ProcessControlBlock* pcb) {
 void update_quantum(void) {
     current_quantum = random_range(MIN_QUANTUM, MAX_QUANTUM);
     printf("New quantum: %d\n", current_quantum);
-}
-
-SchedulingPolicy get_current_policy(void) {
-    return current_policy;
-}
-
-int get_current_quantum(void) {
-    return current_quantum;
 }

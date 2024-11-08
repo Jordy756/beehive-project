@@ -143,27 +143,6 @@ void* egg_hatching_thread(void* arg) {
     return NULL;
 }
 
-void process_egg_hatching(Beehive* hive) {
-    pthread_mutex_lock(&hive->chamber_mutex);
-    
-    for (int i = 0; i < MAX_CHAMBER_SIZE; i++) {
-        for (int j = 0; j < MAX_CHAMBER_SIZE; j++) {
-            if (hive->brood_chamber.cells[i][j].eggs > 0) {
-                EggHatchingArgs* args = malloc(sizeof(EggHatchingArgs));
-                args->hive = hive;
-                args->cell_x = i;
-                args->cell_y = j;
-                
-                pthread_t hatching_thread;
-                pthread_create(&hatching_thread, NULL, egg_hatching_thread, args);
-                pthread_detach(hatching_thread);
-            }
-        }
-    }
-    
-    pthread_mutex_unlock(&hive->chamber_mutex);
-}
-
 void print_chamber_matrix(Beehive* hive) {
     printf("\nColmena #%d - Matriz de cámaras:\n", hive->id);
     
@@ -189,12 +168,6 @@ void print_chamber_matrix(Beehive* hive) {
     printf("\nTotal de miel: %d\n", hive->honey_count);
     printf("Total de huevos: %d\n", hive->egg_count);
     printf("Total de abejas: %d\n", hive->bee_count);
-}
-
-void process_honey_production(Beehive* hive) {
-    pthread_mutex_lock(&hive->chamber_mutex);
-    // La producción de miel ahora se maneja en deposit_polen
-    pthread_mutex_unlock(&hive->chamber_mutex);
 }
 
 bool check_new_queen(Beehive* hive) {
@@ -236,9 +209,9 @@ void cleanup_beehive(Beehive* hive) {
 }
 
 void print_beehive_stats(Beehive* hive) {
-    printf("\nBeehive #%d Stats:\n", hive->id);
-    printf("Bees: %d\n", hive->bee_count);
-    printf("Honey: %d\n", hive->honey_count);
-    printf("Eggs: %d\n", hive->egg_count);
+    printf("\nColmena #%d, Estadisticas:\n", hive->id);
+    printf("Abejas: %d\n", hive->bee_count);
+    printf("Miel: %d\n", hive->honey_count);
+    printf("Huevos: %d\n", hive->egg_count);
     print_chamber_matrix(hive);
 }

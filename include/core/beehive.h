@@ -5,8 +5,6 @@
 
 void init_beehive(Beehive* hive, int id);
 void* bee_lifecycle(void* arg);
-void process_honey_production(Beehive* hive);
-void process_egg_hatching(Beehive* hive);
 void cleanup_beehive(Beehive* hive);
 void print_beehive_stats(Beehive* hive);
 bool check_new_queen(Beehive* hive);

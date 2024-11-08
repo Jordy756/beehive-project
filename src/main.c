@@ -58,10 +58,6 @@ int main() {
         .avg_io_wait_time = 0,
         .avg_ready_wait_time = 0,
         .process_id = 0,
-        .priority = 1,
-        .bee_count = beehives[0]->bee_count,
-        .honey_count = beehives[0]->honey_count,
-        .egg_count = beehives[0]->egg_count,
         .state = READY
     };
     
@@ -75,9 +71,6 @@ int main() {
             Beehive* current_hive = beehives[current_index];
             
             pcb.process_id = current_index;
-            pcb.bee_count = current_hive->bee_count;
-            pcb.honey_count = current_hive->honey_count;
-            pcb.egg_count = current_hive->egg_count;
             
             schedule_process(&pcb);
             print_beehive_stats(current_hive);
