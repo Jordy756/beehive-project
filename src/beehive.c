@@ -55,7 +55,7 @@ void init_chambers(Beehive* hive) {
         if (honey_remaining > 0) {
             for (int i = 0; i < MAX_CHAMBER_SIZE && honey_remaining > 0; i++) {
                 for (int j = 0; j < MAX_CHAMBER_SIZE && honey_remaining > 0; j++) {
-                    if (!is_egg_position(i, j)) {
+                    if (!is_egg_position(i, j) && chamber->honey_count < MAX_HONEY_PER_CHAMBER) {
                         chamber->cells[i][j].has_honey = true;
                         chamber->honey_count++;
                         honey_remaining--;
@@ -116,17 +116,18 @@ void* honey_production_thread(void* arg) {
                     // Intentar depositar miel en cualquier cámara
                     for (int c = 0; c < NUM_CHAMBERS && honey_to_produce > 0; c++) {
                         Chamber* chamber = &hive->chambers[c];
+                        if (chamber->honey_count >= MAX_HONEY_PER_CHAMBER) {
+                            continue;
+                        }
+                        
                         for (int x = 0; x < MAX_CHAMBER_SIZE && honey_to_produce > 0; x++) {
                             for (int y = 0; y < MAX_CHAMBER_SIZE && honey_to_produce > 0; y++) {
-                                // Evitar área central preferida para huevos
-                                if (!(x >= MAX_CHAMBER_SIZE/2-2 && x <= MAX_CHAMBER_SIZE/2+1 &&
-                                    y >= MAX_CHAMBER_SIZE/2-2 && y <= MAX_CHAMBER_SIZE/2+1)) {
-                                    if (!chamber->cells[x][y].has_honey) {
-                                        chamber->cells[x][y].has_honey = true;
-                                        chamber->honey_count++;
-                                        hive->honey_count++;
-                                        honey_to_produce--;
-                                    }
+                                if (!is_egg_position(x, y) && !chamber->cells[x][y].has_honey && 
+                                    chamber->honey_count < MAX_HONEY_PER_CHAMBER) {
+                                    chamber->cells[x][y].has_honey = true;
+                                    chamber->honey_count++;
+                                    hive->honey_count++;
+                                    honey_to_produce--;
                                 }
                             }
                         }
@@ -255,9 +256,15 @@ void deposit_polen(Beehive* hive, int polen_amount) {
     if (honey_produced > 0 && hive->honey_count < MAX_HONEY_PER_HIVE) {
         for (int c = 0; c < NUM_CHAMBERS && honey_produced > 0; c++) {
             Chamber* chamber = &hive->chambers[c];
+            // Verificar límite de miel por cámara
+            if (chamber->honey_count >= MAX_HONEY_PER_CHAMBER) {
+                continue;
+            }
+            
             for (int x = 0; x < MAX_CHAMBER_SIZE && honey_produced > 0; x++) {
                 for (int y = 0; y < MAX_CHAMBER_SIZE && honey_produced > 0; y++) {
-                    if (!is_egg_position(x, y) && !chamber->cells[x][y].has_honey) {
+                    if (!is_egg_position(x, y) && !chamber->cells[x][y].has_honey && 
+                        chamber->honey_count < MAX_HONEY_PER_CHAMBER) {
                         chamber->cells[x][y].has_honey = true;
                         chamber->honey_count++;
                         hive->honey_count++;
@@ -314,7 +321,7 @@ void print_single_chamber(Chamber* chamber, int chamber_index) {
         }
         printf("\n");
     }
-    printf("Miel en cámara: %d\n", chamber->honey_count);
+    printf("Miel en cámara: %d/%d\n", chamber->honey_count, MAX_HONEY_PER_CHAMBER);
     printf("Huevos en cámara: %d/%d\n", chamber->egg_count, MAX_EGGS_PER_CHAMBER);
 }
 
@@ -325,7 +332,6 @@ void print_chamber_matrix(Beehive* hive) {
         print_single_chamber(&hive->chambers[i], i);
     }
 }
-
 
 void print_beehive_stats(Beehive* hive) {
     printf("\nColmena #%d, Estadísticas:\n", hive->id);

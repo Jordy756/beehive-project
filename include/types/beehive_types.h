@@ -19,12 +19,13 @@
 #define MIN_EGGS 20
 #define MAX_EGGS 40
 #define POLEN_TO_HONEY_RATIO 10
-#define QUEEN_BIRTH_PROBABILITY 5
+#define QUEEN_BIRTH_PROBABILITY 90
 
 // Límites
 #define MAX_EGGS_PER_HIVE 400
 #define MAX_EGGS_PER_CHAMBER 40
 #define MAX_HONEY_PER_HIVE 600
+#define MAX_HONEY_PER_CHAMBER 60
 
 typedef enum {
     QUEEN,
