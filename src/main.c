@@ -21,18 +21,20 @@ int total_beehives = 0;
 void handle_signal(int sig) {
     (void)sig;  // Avoid unused parameter warning
     running = 0;
-    printf("\nFinalizando la simulación...\n");
+    printf("\nFinalizando la simulación de colmenas...\n");
 }
 
 void cleanup_all_beehives() {
-    printf("Limpiando todas las colmenas...\n");
+    printf("\nLimpiando todas las colmenas...\n");
     for (int i = 0; i < total_beehives; i++) {
         if (beehives[i] != NULL) {
+            printf("Limpiando colmena #%d...\n", i);
             cleanup_beehive(beehives[i]);
             free(beehives[i]);
             beehives[i] = NULL;
         }
     }
+    printf("Limpieza completada.\n");
 }
 
 int main() {
@@ -68,7 +70,9 @@ int main() {
         .state = READY
     };
     
-    printf("Simulación iniciada. Presione Ctrl+C para finalizar.\n");
+    printf("\n=== Simulación de Colmenas Iniciada ===\n");
+    printf("- Cada colmena tiene %d cámaras (alternando entre miel y cría)\n", NUM_CHAMBERS);
+    printf("- Presione Ctrl+C para finalizar la simulación\n\n");
     
     while (running) {
         // Update job queue with current beehives
@@ -92,7 +96,9 @@ int main() {
                     init_beehive(beehives[new_id], new_id);
                     total_beehives++;
                     
-                    printf("\n¡Nueva colmena creada! Total de colmenas: %d\n", total_beehives);
+                    printf("\n=== ¡Nueva Colmena Creada! ===\n");
+                    printf("- ID de la nueva colmena: %d\n", new_id);
+                    printf("- Total de colmenas activas: %d/%d\n\n", total_beehives, MAX_BEEHIVES);
                 }
             }
         }
@@ -100,7 +106,6 @@ int main() {
         save_pcb_to_file(&pcb);
         update_process_table(&pcb);
         
-        // Añadir un pequeño retraso para no sobrecargar el CPU
         delay_ms(100);
     }
     
@@ -108,6 +113,10 @@ int main() {
     cleanup_all_beehives();
     free(job_queue);
     
-    printf("Simulación finalizada.\n");
+    printf("\n=== Simulación Finalizada ===\n");
+    printf("- Total de colmenas procesadas: %d\n", total_beehives);
+    printf("- Todas las colmenas han sido limpiadas\n");
+    printf("- Recursos liberados correctamente\n\n");
+    
     return 0;
 }

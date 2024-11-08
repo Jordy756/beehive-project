@@ -9,6 +9,7 @@
 
 // Constantes relacionadas con las colmenas
 #define MAX_CHAMBER_SIZE 10
+#define NUM_CHAMBERS 10
 #define INITIAL_BEEHIVES 1
 #define MAX_BEEHIVES 40
 #define MIN_BEES 20
@@ -20,7 +21,7 @@
 #define POLEN_TO_HONEY_RATIO 10
 #define QUEEN_BIRTH_PROBABILITY 5
 
-// Nuevos límites
+// Límites
 #define MAX_EGGS_PER_HIVE 400
 #define MAX_EGGS_PER_CHAMBER 40
 #define MAX_HONEY_PER_HIVE 600
@@ -40,21 +41,21 @@ typedef struct {
 } Bee;
 
 typedef struct {
-    int honey;
-    int eggs;
+    bool has_honey;     // true si hay miel
+    bool has_egg;       // true si hay huevo
 } Cell;
 
 typedef struct {
     Cell cells[MAX_CHAMBER_SIZE][MAX_CHAMBER_SIZE];
-    int total_eggs;
+    int honey_count;    // cantidad de miel en esta cámara
+    int egg_count;      // cantidad de huevos en esta cámara
 } Chamber;
 
-// Estructura para los 3 hilos principales de la colmena
 typedef struct {
-    pthread_t honey_production;    // Hilo de producción de miel
-    pthread_t polen_collection;    // Hilo de recolección de polen
-    pthread_t egg_hatching;        // Hilo de nacimiento de abejas
-    bool threads_running;          // Flag para control de hilos
+    pthread_t honey_production;
+    pthread_t polen_collection;
+    pthread_t egg_hatching;
+    bool threads_running;
 } HiveThreads;
 
 typedef struct Beehive {
@@ -65,8 +66,7 @@ typedef struct Beehive {
     int egg_count;
     int max_eggs;
     Bee* bees;
-    Chamber honey_chamber;
-    Chamber brood_chamber;
+    Chamber chambers[NUM_CHAMBERS];
     pthread_mutex_t chamber_mutex;
     sem_t resource_sem;
     ProcessState state;
