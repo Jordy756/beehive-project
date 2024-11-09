@@ -112,74 +112,101 @@ void* honey_production_thread(void* arg) {
     Beehive* hive = (Beehive*)arg;
     
     while (hive->threads.threads_running) {
-        pthread_mutex_lock(&hive->chamber_mutex);
+        pthread_mutex_lock(&hive->threads.resources.polen_mutex);
         
         // Convertir polen a miel (10:1)
-        for (int i = 0; i < hive->bee_count; i++) {
-            if (hive->bees[i].polen_collected >= POLEN_TO_HONEY_RATIO) {
-                int honey_to_produce = hive->bees[i].polen_collected / POLEN_TO_HONEY_RATIO;
-                if (hive->honey_count + honey_to_produce <= MAX_HONEY_PER_HIVE) {
-                    // Intentar depositar miel en cualquier cámara
-                    for (int c = 0; c < NUM_CHAMBERS && honey_to_produce > 0; c++) {
-                        Chamber* chamber = &hive->chambers[c];
-                        if (chamber->honey_count >= MAX_HONEY_PER_CHAMBER) {
-                            continue;
-                        }
-                        
-                        for (int x = 0; x < MAX_CHAMBER_SIZE && honey_to_produce > 0; x++) {
-                            for (int y = 0; y < MAX_CHAMBER_SIZE && honey_to_produce > 0; y++) {
-                                if (!is_egg_position(x, y) && !chamber->cells[x][y].has_honey && 
-                                    chamber->honey_count < MAX_HONEY_PER_CHAMBER) {
-                                    chamber->cells[x][y].has_honey = true;
-                                    chamber->honey_count++;
-                                    hive->honey_count++;
-                                    honey_to_produce--;
-                                }
-                            }
+        if (hive->threads.resources.polen_for_honey >= POLEN_TO_HONEY_RATIO) {
+            int honey_to_produce = hive->threads.resources.polen_for_honey / POLEN_TO_HONEY_RATIO;
+            hive->threads.resources.polen_for_honey %= POLEN_TO_HONEY_RATIO; // Mantener el residuo
+            
+            printf("\n[Hilo Producción Miel - Colmena %d] ", hive->id);
+            printf("Polen disponible para convertir: %d, ", hive->threads.resources.polen_for_honey);
+            printf("Miel a producir: %d\n", honey_to_produce);
+            
+            pthread_mutex_lock(&hive->chamber_mutex);
+            int honey_produced = 0;
+            
+            // Intentar depositar miel en cámaras disponibles
+            for (int c = 0; c < NUM_CHAMBERS && honey_to_produce > 0; c++) {
+                Chamber* chamber = &hive->chambers[c];
+                if (chamber->honey_count >= MAX_HONEY_PER_CHAMBER) continue;
+                
+                for (int x = 0; x < MAX_CHAMBER_SIZE && honey_to_produce > 0; x++) {
+                    for (int y = 0; y < MAX_CHAMBER_SIZE && honey_to_produce > 0; y++) {
+                        if (!is_egg_position(x, y) && !chamber->cells[x][y].has_honey &&
+                            chamber->honey_count < MAX_HONEY_PER_CHAMBER) {
+                            chamber->cells[x][y].has_honey = true;
+                            chamber->honey_count++;
+                            hive->honey_count++;
+                            honey_to_produce--;
+                            honey_produced++;
                         }
                     }
-                    hive->bees[i].polen_collected = 0;
                 }
             }
+            
+            printf("[Hilo Producción Miel - Colmena %d] ", hive->id);
+            printf("Miel producida: %d, Total miel en colmena: %d/%d\n", 
+                   honey_produced, hive->honey_count, MAX_HONEY_PER_HIVE);
+            
+            pthread_mutex_unlock(&hive->chamber_mutex);
         }
         
-        pthread_mutex_unlock(&hive->chamber_mutex);
-        delay_ms(random_range(100, 300));
+        pthread_mutex_unlock(&hive->threads.resources.polen_mutex);
+        delay_ms(2000); // Aumentado para dar más tiempo entre producciones
     }
     
     return NULL;
 }
 
 void* polen_collection_thread(void* arg) {
-   Beehive* hive = (Beehive*)arg;
-  
-   while (hive->threads.threads_running) {
-       pthread_mutex_lock(&hive->chamber_mutex);
-      
-       // Solo las obreras recolectan polen y pueden morir
-       for (int i = 0; i < hive->bee_count; i++) {
-           // Verificar explícitamente que sea una obrera
-           if (hive->bees[i].type == WORKER && hive->bees[i].is_alive) {
-               int polen = random_range(MIN_POLEN_PER_TRIP, MAX_POLEN_PER_TRIP);
-               hive->bees[i].polen_collected += polen;
-               hive->bees[i].last_collection_time = time(NULL);
-              
-               // Solo las obreras pueden morir
-               if (hive->bees[i].polen_collected >= random_range(MIN_POLEN_LIFETIME, MAX_POLEN_LIFETIME)) {
-                   hive->bees[i].is_alive = false;
-               }
-           } else if (hive->bees[i].type == QUEEN) {
-               // Asegurarse de que la reina siempre esté viva
-               hive->bees[i].is_alive = true;
-               hive->has_queen = true;
-           }
-       }
-      
-       pthread_mutex_unlock(&hive->chamber_mutex);
-       delay_ms(100);
-   }
-  
-   return NULL;
+    Beehive* hive = (Beehive*)arg;
+    
+    while (hive->threads.threads_running) {
+        pthread_mutex_lock(&hive->chamber_mutex);
+        
+        printf("\n[Hilo Recolección Polen - Colmena %d] Iniciando ciclo de recolección\n", hive->id);
+        int total_polen_collected = 0;
+        int active_workers = 0;
+        
+        // Solo las obreras recolectan polen
+        for (int i = 0; i < hive->bee_count; i++) {
+            if (hive->bees[i].type == WORKER && hive->bees[i].is_alive) {
+                active_workers++;
+                int polen = random_range(MIN_POLEN_PER_TRIP, MAX_POLEN_PER_TRIP);
+                
+                pthread_mutex_lock(&hive->threads.resources.polen_mutex);
+                hive->threads.resources.total_polen += polen;
+                hive->threads.resources.polen_for_honey += polen;
+                total_polen_collected += polen;
+                
+                printf("[Abeja %d] Recolectó %d polen (Total personal: %d)\n", 
+                       hive->bees[i].id, polen, hive->bees[i].polen_collected + polen);
+                
+                pthread_mutex_unlock(&hive->threads.resources.polen_mutex);
+                
+                hive->bees[i].polen_collected += polen;
+                hive->bees[i].last_collection_time = time(NULL);
+                
+                // Verificar si la abeja debe morir
+                if (hive->bees[i].polen_collected >= random_range(MIN_POLEN_LIFETIME, MAX_POLEN_LIFETIME)) {
+                    hive->bees[i].is_alive = false;
+                    printf("[Abeja %d] ¡Ha muerto! Polen total recolectado en su vida: %d\n", 
+                           hive->bees[i].id, hive->bees[i].polen_collected);
+                }
+            }
+        }
+        
+        printf("[Hilo Recolección Polen - Colmena %d] ", hive->id);
+        printf("Resumen: %d obreras activas, Polen recolectado en este ciclo: %d, ", 
+               active_workers, total_polen_collected);
+        printf("Polen total en colmena: %d\n", hive->threads.resources.total_polen);
+        
+        pthread_mutex_unlock(&hive->chamber_mutex);
+        delay_ms(2000); // Aumentado para dar más tiempo entre recolecciones
+    }
+    
+    return NULL;
 }
 
 void* egg_hatching_thread(void* arg) {
@@ -187,80 +214,79 @@ void* egg_hatching_thread(void* arg) {
     
     while (hive->threads.threads_running) {
         pthread_mutex_lock(&hive->chamber_mutex);
-        
         time_t current_time = time(NULL);
         
-        // Asegurarse de que siempre haya una reina viva
-        bool found_queen = false;
-        for (int i = 0; i < hive->bee_count; i++) {
-            if (hive->bees[i].type == QUEEN) {
-                hive->bees[i].is_alive = true; // La reina siempre está viva
-                found_queen = true;
-                hive->has_queen = true;
-                break;
-            }
-        }
-
-        // Si no hay reina (no debería ocurrir), convertir la primera abeja en reina
-        if (!found_queen && hive->bee_count > 0) {
-            hive->bees[0].type = QUEEN;
-            hive->bees[0].is_alive = true;
-            hive->has_queen = true;
-        }
+        printf("\n[Hilo Nacimiento - Colmena %d] Iniciando ciclo de reproducción\n", hive->id);
         
-        // Si hay una reina (que siempre debería estar viva), intentar poner huevos
+        // Gestionar la reina y puesta de huevos
         for (int i = 0; i < hive->bee_count; i++) {
-            if (hive->bees[i].type == QUEEN) {
-                // La reina pone huevos en cámaras disponibles
-                for (int c = 0; c < NUM_CHAMBERS; c++) {
+            if (hive->bees[i].type == QUEEN && hive->bees[i].is_alive) {
+                int eggs_to_lay = random_range(MIN_EGGS_PER_LAYING, MAX_EGGS_PER_LAYING);
+                int eggs_laid = 0;
+                
+                printf("[Reina - Colmena %d] Intentando poner %d huevos\n", hive->id, eggs_to_lay);
+                
+                // Intentar poner huevos en cámaras disponibles
+                for (int c = 0; c < NUM_CHAMBERS && eggs_to_lay > 0; c++) {
                     Chamber* chamber = &hive->chambers[c];
-                    if (chamber->egg_count < MAX_EGGS_PER_CHAMBER && 
-                        hive->egg_count < MAX_EGGS_PER_HIVE) {
-                        for (int x = 0; x < MAX_CHAMBER_SIZE; x++) {
-                            for (int y = 0; y < MAX_CHAMBER_SIZE; y++) {
-                                if (is_egg_position(x, y) && !chamber->cells[x][y].has_egg) {
-                                    if (random_range(1, 100) <= EGG_HATCH_PROBABILITY) {
-                                        chamber->cells[x][y].has_egg = true;
-                                        chamber->cells[x][y].egg_lay_time = current_time;
-                                        chamber->egg_count++;
-                                        hive->egg_count++;
-                                    }
-                                }
+                    if (chamber->egg_count >= MAX_EGGS_PER_CHAMBER ||
+                        hive->egg_count >= MAX_EGGS_PER_HIVE) continue;
+                    
+                    for (int x = 0; x < MAX_CHAMBER_SIZE && eggs_to_lay > 0; x++) {
+                        for (int y = 0; y < MAX_CHAMBER_SIZE && eggs_to_lay > 0; y++) {
+                            if (is_egg_position(x, y) && !chamber->cells[x][y].has_egg) {
+                                chamber->cells[x][y].has_egg = true;
+                                chamber->cells[x][y].egg_lay_time = current_time;
+                                chamber->egg_count++;
+                                hive->egg_count++;
+                                eggs_to_lay--;
+                                eggs_laid++;
                             }
                         }
                     }
                 }
+                
+                printf("[Reina - Colmena %d] Huevos puestos: %d, Total huevos en colmena: %d/%d\n",
+                       hive->id, eggs_laid, hive->egg_count, MAX_EGGS_PER_HIVE);
                 break; // Solo hay una reina
             }
         }
         
-        // Procesar nacimientos en todas las cámaras
+        // Gestionar eclosión de huevos
+        int eggs_hatched = 0;
         for (int c = 0; c < NUM_CHAMBERS; c++) {
             Chamber* chamber = &hive->chambers[c];
-            for (int i = 0; i < MAX_CHAMBER_SIZE; i++) {
-                for (int j = 0; j < MAX_CHAMBER_SIZE; j++) {
-                    if (chamber->cells[i][j].has_egg) {
-                        double elapsed_time = difftime(current_time, chamber->cells[i][j].egg_lay_time) * 1000;
-                        if (elapsed_time >= random_range(MIN_EGG_HATCH_TIME, MAX_EGG_HATCH_TIME)) {
-                            chamber->cells[i][j].has_egg = false;
+            for (int x = 0; x < MAX_CHAMBER_SIZE; x++) {
+                for (int y = 0; y < MAX_CHAMBER_SIZE; y++) {
+                    if (chamber->cells[x][y].has_egg) {
+                        double elapsed_time = difftime(current_time, chamber->cells[x][y].egg_lay_time) * 1000;
+                        if (elapsed_time >= MAX_EGG_HATCH_TIME) { // Cambiado para asegurar la eclosión
+                            // Eclosión del huevo
+                            chamber->cells[x][y].has_egg = false;
                             chamber->egg_count--;
                             hive->egg_count--;
+                            eggs_hatched++;
                             
+                            // Crear nueva abeja si hay espacio
                             if (hive->bee_count < MAX_BEES) {
                                 int new_bee_index = hive->bee_count;
                                 hive->bee_count++;
                                 hive->bees = realloc(hive->bees, sizeof(Bee) * hive->bee_count);
                                 
                                 // Inicializar nueva abeja
-                                hive->bees[new_bee_index].id = new_bee_index;
-                                // Solo crear reina si no hay una
-                                hive->bees[new_bee_index].type = !found_queen ? QUEEN : WORKER;
-                                hive->bees[new_bee_index].polen_collected = 0;
-                                hive->bees[new_bee_index].is_alive = true;
-                                hive->bees[new_bee_index].hive = hive;
-                                hive->bees[new_bee_index].last_collection_time = current_time;
+                                Bee* new_bee = &hive->bees[new_bee_index];
+                                new_bee->id = new_bee_index;
+                                new_bee->type = !hive->has_queen ? QUEEN : WORKER;
+                                new_bee->polen_collected = 0;
+                                new_bee->is_alive = true;
+                                new_bee->hive = hive;
+                                new_bee->last_collection_time = current_time;
+                                new_bee->last_egg_laying_time = current_time;
                                 
-                                if (hive->bees[new_bee_index].type == QUEEN) {
+                                printf("[Nacimiento - Colmena %d] Nueva abeja %d nacida (Tipo: %s)\n",
+                                       hive->id, new_bee->id, new_bee->type == QUEEN ? "Reina" : "Obrera");
+                                
+                                if (new_bee->type == QUEEN) {
                                     hive->has_queen = true;
                                 }
                             }
@@ -270,8 +296,12 @@ void* egg_hatching_thread(void* arg) {
             }
         }
         
+        printf("[Hilo Nacimiento - Colmena %d] ", hive->id);
+        printf("Huevos eclosionados: %d, Abejas totales: %d/%d\n",
+               eggs_hatched, hive->bee_count, MAX_BEES);
+        
         pthread_mutex_unlock(&hive->chamber_mutex);
-        delay_ms(1);
+        delay_ms(2000); // Aumentado significativamente para dar tiempo a la eclosión
     }
     
     return NULL;
@@ -394,39 +424,39 @@ void print_chamber_matrix(Beehive* hive) {
 }
 
 void print_beehive_stats(Beehive* hive) {
-   ensure_queen_alive(hive); // Asegurarse de que la reina esté viva antes de imprimir
+    ensure_queen_alive(hive); // Asegurarse de que la reina esté viva antes de imprimir
 
-   printf("\nColmena #%d, Estadísticas:\n", hive->id);
-   
-   int alive_count = 0;
-   int queen_count = 0;
-   int worker_count = 0;
-  
-   for (int i = 0; i < hive->bee_count; i++) {
-       if (hive->bees[i].is_alive) {
-           alive_count++;
-           if (hive->bees[i].type == QUEEN) {
-               queen_count++;
-           } else if (hive->bees[i].type == WORKER) {
-               worker_count++;
-           }
-       }
-   }
-  
-   // Ajustar bee_count para reflejar solo las abejas vivas
-   hive->bee_count = alive_count;
-  
-   printf("Total de abejas: %d\n", hive->bee_count);
-   printf("Abejas vivas: %d (Reina: %d, Obreras: %d)\n", alive_count, queen_count, worker_count);
-   printf("Total de miel: %d/%d\n", hive->honey_count, MAX_HONEY_PER_HIVE);
-   printf("Total de huevos: %d/%d\n", hive->egg_count, MAX_EGGS_PER_HIVE);
-  
-   // Mostrar recursos por cámara
-   for (int c = 0; c < NUM_CHAMBERS; c++) {
-       Chamber* chamber = &hive->chambers[c];
-       printf("Cámara %d - Miel: %d, Huevos: %d/%d\n",
-              c, chamber->honey_count, chamber->egg_count, MAX_EGGS_PER_CHAMBER);
-   }
-  
-   print_chamber_matrix(hive);
+    printf("\nColmena #%d, Estadísticas:\n", hive->id);
+    
+    int alive_count = 0;
+    int queen_count = 0;
+    int worker_count = 0;
+    
+    for (int i = 0; i < hive->bee_count; i++) {
+        if (hive->bees[i].is_alive) {
+            alive_count++;
+            if (hive->bees[i].type == QUEEN) {
+                queen_count++;
+            } else if (hive->bees[i].type == WORKER) {
+                worker_count++;
+            }
+        }
+    }
+    
+    // Ajustar bee_count para reflejar solo las abejas vivas
+    hive->bee_count = alive_count;
+    
+    printf("Total de abejas: %d\n", hive->bee_count);
+    printf("Abejas vivas: %d (Reina: %d, Obreras: %d)\n", alive_count, queen_count, worker_count);
+    printf("Total de miel: %d/%d\n", hive->honey_count, MAX_HONEY_PER_HIVE);
+    printf("Total de huevos: %d/%d\n", hive->egg_count, MAX_EGGS_PER_HIVE);
+    
+    // Mostrar recursos por cámara
+    for (int c = 0; c < NUM_CHAMBERS; c++) {
+        Chamber* chamber = &hive->chambers[c];
+        printf("Cámara %d - Miel: %d, Huevos: %d/%d\n",
+                c, chamber->honey_count, chamber->egg_count, MAX_EGGS_PER_CHAMBER);
+    }
+    
+    print_chamber_matrix(hive);
 }

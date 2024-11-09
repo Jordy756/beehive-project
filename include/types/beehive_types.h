@@ -30,6 +30,10 @@
 #define MIN_EGG_HATCH_TIME 1
 #define MAX_EGG_HATCH_TIME 10
 
+// Constantes para la reina
+#define MIN_EGGS_PER_LAYING 100
+#define MAX_EGGS_PER_LAYING 120
+
 // Límites
 #define MAX_EGGS_PER_HIVE 400
 #define MAX_EGGS_PER_CHAMBER 40
@@ -48,6 +52,7 @@ typedef struct {
    bool is_alive;
    struct Beehive* hive;
    time_t last_collection_time;  // Para rastrear cuándo recolectó polen por última vez
+   time_t last_egg_laying_time;  // Para rastrear cuándo la reina puso huevos por última vez
 } Bee;
 
 typedef struct {
@@ -62,11 +67,19 @@ typedef struct {
    int egg_count;      // cantidad de huevos en esta cámara
 } Chamber;
 
+// Estructura para gestionar los recursos de producción
+typedef struct {
+   int total_polen;        // Polen total recolectado
+   int polen_for_honey;    // Polen pendiente de convertir en miel
+   pthread_mutex_t polen_mutex;
+} ProductionResources;
+
 typedef struct {
    pthread_t honey_production;
    pthread_t polen_collection;
    pthread_t egg_hatching;
    bool threads_running;
+   ProductionResources resources;  // Nuevo: recursos compartidos entre hilos
 } HiveThreads;
 
 typedef struct Beehive {
