@@ -254,13 +254,15 @@ void* egg_hatching_thread(void* arg) {
         
         // Gestionar eclosión de huevos
         int eggs_hatched = 0;
-        for (int c = 0; c < NUM_CHAMBERS; c++) {
+        bool new_queen_born = false;
+        
+        for (int c = 0; c < NUM_CHAMBERS && !new_queen_born; c++) {
             Chamber* chamber = &hive->chambers[c];
-            for (int x = 0; x < MAX_CHAMBER_SIZE; x++) {
-                for (int y = 0; y < MAX_CHAMBER_SIZE; y++) {
+            for (int x = 0; x < MAX_CHAMBER_SIZE && !new_queen_born; x++) {
+                for (int y = 0; y < MAX_CHAMBER_SIZE && !new_queen_born; y++) {
                     if (chamber->cells[x][y].has_egg) {
                         double elapsed_time = difftime(current_time, chamber->cells[x][y].egg_lay_time) * 1000;
-                        if (elapsed_time >= MAX_EGG_HATCH_TIME) { // Cambiado para asegurar la eclosión
+                        if (elapsed_time >= MAX_EGG_HATCH_TIME) {
                             // Eclosión del huevo
                             chamber->cells[x][y].has_egg = false;
                             chamber->egg_count--;
@@ -273,10 +275,13 @@ void* egg_hatching_thread(void* arg) {
                                 hive->bee_count++;
                                 hive->bees = realloc(hive->bees, sizeof(Bee) * hive->bee_count);
                                 
+                                // Determinar si será reina (90% de probabilidad)
+                                bool will_be_queen = random_range(1, 100) <= QUEEN_BIRTH_PROBABILITY;
+                                
                                 // Inicializar nueva abeja
                                 Bee* new_bee = &hive->bees[new_bee_index];
                                 new_bee->id = new_bee_index;
-                                new_bee->type = !hive->has_queen ? QUEEN : WORKER;
+                                new_bee->type = will_be_queen ? QUEEN : WORKER;
                                 new_bee->polen_collected = 0;
                                 new_bee->is_alive = true;
                                 new_bee->hive = hive;
@@ -287,13 +292,18 @@ void* egg_hatching_thread(void* arg) {
                                        hive->id, new_bee->id, new_bee->type == QUEEN ? "Reina" : "Obrera");
                                 
                                 if (new_bee->type == QUEEN) {
-                                    hive->has_queen = true;
+                                    printf("[Nacimiento - Colmena %d] ¡Nueva reina nacida! Se creará una nueva colmena.\n", 
+                                           hive->id);
+                                    new_queen_born = true;
+                                    break; // Salir del bucle más interno
                                 }
                             }
                         }
                     }
                 }
+                if (new_queen_born) break; // Salir del bucle medio
             }
+            if (new_queen_born) break; // Salir del bucle externo
         }
         
         printf("[Hilo Nacimiento - Colmena %d] ", hive->id);
@@ -301,7 +311,7 @@ void* egg_hatching_thread(void* arg) {
                eggs_hatched, hive->bee_count, MAX_BEES);
         
         pthread_mutex_unlock(&hive->chamber_mutex);
-        delay_ms(2000); // Aumentado significativamente para dar tiempo a la eclosión
+        delay_ms(2000);
     }
     
     return NULL;
@@ -354,12 +364,11 @@ bool check_new_queen(Beehive* hive) {
     pthread_mutex_lock(&hive->chamber_mutex);
     bool new_queen_found = false;
     
-    // Solo buscar nueva reina si no hay una viva
-    if (!hive->has_queen) {
-        // Intentar crear nueva reina desde huevo existente
-        if (hive->egg_count > 0 && random_range(1, 100) <= QUEEN_BIRTH_PROBABILITY) {
+    // Verificar si hay una reina nueva
+    for (int i = 0; i < hive->bee_count && !new_queen_found; i++) {
+        if (hive->bees[i].type == QUEEN && hive->bees[i].is_alive && 
+            difftime(time(NULL), hive->bees[i].last_egg_laying_time) < 10) { // Reina recién nacida
             new_queen_found = true;
-            // La nueva reina se creará cuando el huevo eclosione
         }
     }
     

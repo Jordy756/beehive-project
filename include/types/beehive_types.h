@@ -19,8 +19,7 @@
 #define MIN_EGGS 20
 #define MAX_EGGS 40
 #define POLEN_TO_HONEY_RATIO 10
-#define QUEEN_BIRTH_PROBABILITY 90
-#define EGG_HATCH_PROBABILITY 1
+#define QUEEN_BIRTH_PROBABILITY 5
 
 // Constantes para polen y tiempo de vida
 #define MIN_POLEN_PER_TRIP 1

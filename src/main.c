@@ -91,14 +91,24 @@ int main() {
                 
                 // Check for new queen and create new beehive if possible
                 if (check_new_queen(current_hive) && total_beehives < MAX_BEEHIVES) {
-                    int new_id = total_beehives;
-                    beehives[new_id] = malloc(sizeof(Beehive));
-                    init_beehive(beehives[new_id], new_id);
-                    total_beehives++;
+                    // Encontrar el siguiente índice disponible
+                    int new_index = -1;
+                    for (int j = 0; j < MAX_BEEHIVES; j++) {
+                        if (beehives[j] == NULL) {
+                            new_index = j;
+                            break;
+                        }
+                    }
                     
-                    printf("\n=== ¡Nueva Colmena Creada! ===\n");
-                    printf("- ID de la nueva colmena: %d\n", new_id);
-                    printf("- Total de colmenas activas: %d/%d\n\n", total_beehives, MAX_BEEHIVES);
+                    if (new_index != -1) {
+                        beehives[new_index] = malloc(sizeof(Beehive));
+                        init_beehive(beehives[new_index], new_index);
+                        total_beehives++;
+                        
+                        printf("\n=== ¡Nueva Colmena Creada! ===\n");
+                        printf("- ID de la nueva colmena: %d\n", new_index);
+                        printf("- Total de colmenas activas: %d/%d\n\n", total_beehives, MAX_BEEHIVES);
+                    }
                 }
             }
         }
