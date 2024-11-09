@@ -448,4 +448,5 @@ void print_beehive_stats(Beehive* hive) {
     }
     
     print_chamber_matrix(hive);
+    delay_ms(2000);
 }
