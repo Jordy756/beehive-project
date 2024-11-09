@@ -307,24 +307,6 @@ void* egg_hatching_thread(void* arg) {
     return NULL;
 }
 
-void ensure_queen_alive(Beehive* hive) {
-    bool found_queen = false;
-    for (int i = 0; i < hive->bee_count; i++) {
-        if (hive->bees[i].type == QUEEN) {
-            hive->bees[i].is_alive = true;
-            found_queen = true;
-            hive->has_queen = true;
-            break;
-        }
-    }
-
-    if (!found_queen && hive->bee_count > 0) {
-        hive->bees[0].type = QUEEN;
-        hive->bees[0].is_alive = true;
-        hive->has_queen = true;
-    }
-}
-
 void start_hive_threads(Beehive* hive) {
     hive->threads.threads_running = true;
     pthread_create(&hive->threads.honey_production, NULL, honey_production_thread, hive);
@@ -424,8 +406,6 @@ void print_chamber_matrix(Beehive* hive) {
 }
 
 void print_beehive_stats(Beehive* hive) {
-    ensure_queen_alive(hive); // Asegurarse de que la reina esté viva antes de imprimir
-
     printf("\nColmena #%d, Estadísticas:\n", hive->id);
     
     int alive_count = 0;
