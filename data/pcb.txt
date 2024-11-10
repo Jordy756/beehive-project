@@ -1,6 +1,479 @@
 ============= PCB Colmena 0 =============
 ID Proceso: 0
-Tiempo de llegada: 1731209640
+Tiempo de llegada: 1731211685
+Iteraciones totales: 1
+Progreso en pila de código: 0
+Tiempo de espera en E/S: 0
+Promedio tiempo espera E/S: 0.00
+Promedio tiempo espera Ready: 0.00
+Estado actual: READY
+=========================================
+
+============= PCB Colmena 0 =============
+ID Proceso: 0
+Tiempo de llegada: 1731211685
+Iteraciones totales: 1
+Progreso en pila de código: 0
+Tiempo de espera en E/S: 0
+Promedio tiempo espera E/S: 0.00
+Promedio tiempo espera Ready: 0.00
+Estado actual: READY
+=========================================
+
+============= PCB Colmena 0 =============
+ID Proceso: 0
+Tiempo de llegada: 1731211685
+Iteraciones totales: 1
+Progreso en pila de código: 0
+Tiempo de espera en E/S: 0
+Promedio tiempo espera E/S: 0.00
+Promedio tiempo espera Ready: 0.00
+Estado actual: READY
+=========================================
+
+============= PCB Colmena 0 =============
+ID Proceso: 0
+Tiempo de llegada: 1731211685
+Iteraciones totales: 1
+Progreso en pila de código: 0
+Tiempo de espera en E/S: 0
+Promedio tiempo espera E/S: 0.00
+Promedio tiempo espera Ready: 0.00
+Estado actual: READY
+=========================================
+
+============= PCB Colmena 0 =============
+ID Proceso: 0
+Tiempo de llegada: 1731211685
+Iteraciones totales: 1
+Progreso en pila de código: 0
+Tiempo de espera en E/S: 0
+Promedio tiempo espera E/S: 0.00
+Promedio tiempo espera Ready: 0.00
+Estado actual: READY
+=========================================
+
+============= PCB Colmena 0 =============
+ID Proceso: 0
+Tiempo de llegada: 1731211685
+Iteraciones totales: 1
+Progreso en pila de código: 0
+Tiempo de espera en E/S: 0
+Promedio tiempo espera E/S: 0.00
+Promedio tiempo espera Ready: 0.00
+Estado actual: READY
+=========================================
+
+============= PCB Colmena 0 =============
+ID Proceso: 0
+Tiempo de llegada: 1731211685
+Iteraciones totales: 1
+Progreso en pila de código: 0
+Tiempo de espera en E/S: 0
+Promedio tiempo espera E/S: 0.00
+Promedio tiempo espera Ready: 0.00
+Estado actual: READY
+=========================================
+
+============= PCB Colmena 0 =============
+ID Proceso: 0
+Tiempo de llegada: 1731211685
+Iteraciones totales: 1
+Progreso en pila de código: 0
+Tiempo de espera en E/S: 0
+Promedio tiempo espera E/S: 0.00
+Promedio tiempo espera Ready: 0.00
+Estado actual: READY
+=========================================
+
+============= PCB Colmena 0 =============
+ID Proceso: 0
+Tiempo de llegada: 1731211685
+Iteraciones totales: 1
+Progreso en pila de código: 0
+Tiempo de espera en E/S: 0
+Promedio tiempo espera E/S: 0.00
+Promedio tiempo espera Ready: 0.00
+Estado actual: READY
+=========================================
+
+============= PCB Colmena 0 =============
+ID Proceso: 0
+Tiempo de llegada: 1731211685
+Iteraciones totales: 1
+Progreso en pila de código: 0
+Tiempo de espera en E/S: 0
+Promedio tiempo espera E/S: 0.00
+Promedio tiempo espera Ready: 0.00
+Estado actual: READY
+=========================================
+
+============= PCB Colmena 0 =============
+ID Proceso: 0
+Tiempo de llegada: 1731211685
+Iteraciones totales: 1
+Progreso en pila de código: 0
+Tiempo de espera en E/S: 0
+Promedio tiempo espera E/S: 0.00
+Promedio tiempo espera Ready: 0.00
+Estado actual: READY
+=========================================
+
+============= PCB Colmena 0 =============
+ID Proceso: 0
+Tiempo de llegada: 1731211685
+Iteraciones totales: 1
+Progreso en pila de código: 0
+Tiempo de espera en E/S: 0
+Promedio tiempo espera E/S: 0.00
+Promedio tiempo espera Ready: 0.00
+Estado actual: READY
+=========================================
+
+============= PCB Colmena 0 =============
+ID Proceso: 0
+Tiempo de llegada: 1731211685
+Iteraciones totales: 1
+Progreso en pila de código: 0
+Tiempo de espera en E/S: 0
+Promedio tiempo espera E/S: 0.00
+Promedio tiempo espera Ready: 0.00
+Estado actual: READY
+=========================================
+
+============= PCB Colmena 0 =============
+ID Proceso: 0
+Tiempo de llegada: 1731211685
+Iteraciones totales: 1
+Progreso en pila de código: 0
+Tiempo de espera en E/S: 0
+Promedio tiempo espera E/S: 0.00
+Promedio tiempo espera Ready: 0.00
+Estado actual: READY
+=========================================
+
+============= PCB Colmena 0 =============
+ID Proceso: 0
+Tiempo de llegada: 1731211685
+Iteraciones totales: 1
+Progreso en pila de código: 0
+Tiempo de espera en E/S: 0
+Promedio tiempo espera E/S: 0.00
+Promedio tiempo espera Ready: 0.00
+Estado actual: READY
+=========================================
+
+============= PCB Colmena 0 =============
+ID Proceso: 0
+Tiempo de llegada: 1731211685
+Iteraciones totales: 1
+Progreso en pila de código: 0
+Tiempo de espera en E/S: 0
+Promedio tiempo espera E/S: 0.00
+Promedio tiempo espera Ready: 0.00
+Estado actual: READY
+=========================================
+
+============= PCB Colmena 0 =============
+ID Proceso: 0
+Tiempo de llegada: 1731211685
+Iteraciones totales: 1
+Progreso en pila de código: 0
+Tiempo de espera en E/S: 0
+Promedio tiempo espera E/S: 0.00
+Promedio tiempo espera Ready: 0.00
+Estado actual: READY
+=========================================
+
+============= PCB Colmena 0 =============
+ID Proceso: 0
+Tiempo de llegada: 1731211685
+Iteraciones totales: 1
+Progreso en pila de código: 0
+Tiempo de espera en E/S: 0
+Promedio tiempo espera E/S: 0.00
+Promedio tiempo espera Ready: 0.00
+Estado actual: READY
+=========================================
+
+============= PCB Colmena 0 =============
+ID Proceso: 0
+Tiempo de llegada: 1731211685
+Iteraciones totales: 1
+Progreso en pila de código: 0
+Tiempo de espera en E/S: 0
+Promedio tiempo espera E/S: 0.00
+Promedio tiempo espera Ready: 0.00
+Estado actual: READY
+=========================================
+
+============= PCB Colmena 0 =============
+ID Proceso: 0
+Tiempo de llegada: 1731211685
+Iteraciones totales: 1
+Progreso en pila de código: 0
+Tiempo de espera en E/S: 0
+Promedio tiempo espera E/S: 0.00
+Promedio tiempo espera Ready: 0.00
+Estado actual: READY
+=========================================
+
+============= PCB Colmena 0 =============
+ID Proceso: 0
+Tiempo de llegada: 1731211685
+Iteraciones totales: 1
+Progreso en pila de código: 0
+Tiempo de espera en E/S: 0
+Promedio tiempo espera E/S: 0.00
+Promedio tiempo espera Ready: 0.00
+Estado actual: READY
+=========================================
+
+============= PCB Colmena 0 =============
+ID Proceso: 0
+Tiempo de llegada: 1731211685
+Iteraciones totales: 1
+Progreso en pila de código: 0
+Tiempo de espera en E/S: 0
+Promedio tiempo espera E/S: 0.00
+Promedio tiempo espera Ready: 0.00
+Estado actual: READY
+=========================================
+
+============= PCB Colmena 0 =============
+ID Proceso: 0
+Tiempo de llegada: 1731211685
+Iteraciones totales: 1
+Progreso en pila de código: 0
+Tiempo de espera en E/S: 0
+Promedio tiempo espera E/S: 0.00
+Promedio tiempo espera Ready: 0.00
+Estado actual: READY
+=========================================
+
+============= PCB Colmena 0 =============
+ID Proceso: 0
+Tiempo de llegada: 1731211685
+Iteraciones totales: 1
+Progreso en pila de código: 0
+Tiempo de espera en E/S: 0
+Promedio tiempo espera E/S: 0.00
+Promedio tiempo espera Ready: 0.00
+Estado actual: READY
+=========================================
+
+============= PCB Colmena 0 =============
+ID Proceso: 0
+Tiempo de llegada: 1731211685
+Iteraciones totales: 1
+Progreso en pila de código: 0
+Tiempo de espera en E/S: 0
+Promedio tiempo espera E/S: 0.00
+Promedio tiempo espera Ready: 0.00
+Estado actual: READY
+=========================================
+
+============= PCB Colmena 0 =============
+ID Proceso: 0
+Tiempo de llegada: 1731211685
+Iteraciones totales: 1
+Progreso en pila de código: 0
+Tiempo de espera en E/S: 0
+Promedio tiempo espera E/S: 0.00
+Promedio tiempo espera Ready: 0.00
+Estado actual: READY
+=========================================
+
+============= PCB Colmena 0 =============
+ID Proceso: 0
+Tiempo de llegada: 1731211685
+Iteraciones totales: 1
+Progreso en pila de código: 0
+Tiempo de espera en E/S: 0
+Promedio tiempo espera E/S: 0.00
+Promedio tiempo espera Ready: 0.00
+Estado actual: READY
+=========================================
+
+============= PCB Colmena 0 =============
+ID Proceso: 0
+Tiempo de llegada: 1731211685
+Iteraciones totales: 1
+Progreso en pila de código: 0
+Tiempo de espera en E/S: 0
+Promedio tiempo espera E/S: 0.00
+Promedio tiempo espera Ready: 0.00
+Estado actual: READY
+=========================================
+
+============= PCB Colmena 0 =============
+ID Proceso: 0
+Tiempo de llegada: 1731211685
+Iteraciones totales: 1
+Progreso en pila de código: 0
+Tiempo de espera en E/S: 0
+Promedio tiempo espera E/S: 0.00
+Promedio tiempo espera Ready: 0.00
+Estado actual: READY
+=========================================
+
+============= PCB Colmena 0 =============
+ID Proceso: 0
+Tiempo de llegada: 1731211685
+Iteraciones totales: 1
+Progreso en pila de código: 0
+Tiempo de espera en E/S: 0
+Promedio tiempo espera E/S: 0.00
+Promedio tiempo espera Ready: 0.00
+Estado actual: READY
+=========================================
+
+============= PCB Colmena 0 =============
+ID Proceso: 0
+Tiempo de llegada: 1731211685
+Iteraciones totales: 1
+Progreso en pila de código: 0
+Tiempo de espera en E/S: 0
+Promedio tiempo espera E/S: 0.00
+Promedio tiempo espera Ready: 0.00
+Estado actual: READY
+=========================================
+
+============= PCB Colmena 0 =============
+ID Proceso: 0
+Tiempo de llegada: 1731211685
+Iteraciones totales: 1
+Progreso en pila de código: 0
+Tiempo de espera en E/S: 0
+Promedio tiempo espera E/S: 0.00
+Promedio tiempo espera Ready: 0.00
+Estado actual: READY
+=========================================
+
+============= PCB Colmena 0 =============
+ID Proceso: 0
+Tiempo de llegada: 1731211685
+Iteraciones totales: 1
+Progreso en pila de código: 0
+Tiempo de espera en E/S: 0
+Promedio tiempo espera E/S: 0.00
+Promedio tiempo espera Ready: 0.00
+Estado actual: READY
+=========================================
+
+============= PCB Colmena 0 =============
+ID Proceso: 0
+Tiempo de llegada: 1731211685
+Iteraciones totales: 1
+Progreso en pila de código: 0
+Tiempo de espera en E/S: 0
+Promedio tiempo espera E/S: 0.00
+Promedio tiempo espera Ready: 0.00
+Estado actual: READY
+=========================================
+
+============= PCB Colmena 0 =============
+ID Proceso: 0
+Tiempo de llegada: 1731211685
+Iteraciones totales: 1
+Progreso en pila de código: 0
+Tiempo de espera en E/S: 0
+Promedio tiempo espera E/S: 0.00
+Promedio tiempo espera Ready: 0.00
+Estado actual: READY
+=========================================
+
+============= PCB Colmena 0 =============
+ID Proceso: 0
+Tiempo de llegada: 1731211685
+Iteraciones totales: 1
+Progreso en pila de código: 0
+Tiempo de espera en E/S: 0
+Promedio tiempo espera E/S: 0.00
+Promedio tiempo espera Ready: 0.00
+Estado actual: READY
+=========================================
+
+============= PCB Colmena 0 =============
+ID Proceso: 0
+Tiempo de llegada: 1731211685
+Iteraciones totales: 1
+Progreso en pila de código: 0
+Tiempo de espera en E/S: 0
+Promedio tiempo espera E/S: 0.00
+Promedio tiempo espera Ready: 0.00
+Estado actual: READY
+=========================================
+
+============= PCB Colmena 0 =============
+ID Proceso: 0
+Tiempo de llegada: 1731211685
+Iteraciones totales: 1
+Progreso en pila de código: 0
+Tiempo de espera en E/S: 0
+Promedio tiempo espera E/S: 0.00
+Promedio tiempo espera Ready: 0.00
+Estado actual: READY
+=========================================
+
+============= PCB Colmena 0 =============
+ID Proceso: 0
+Tiempo de llegada: 1731211685
+Iteraciones totales: 1
+Progreso en pila de código: 0
+Tiempo de espera en E/S: 0
+Promedio tiempo espera E/S: 0.00
+Promedio tiempo espera Ready: 0.00
+Estado actual: READY
+=========================================
+
+============= PCB Colmena 0 =============
+ID Proceso: 0
+Tiempo de llegada: 1731211685
+Iteraciones totales: 1
+Progreso en pila de código: 0
+Tiempo de espera en E/S: 0
+Promedio tiempo espera E/S: 0.00
+Promedio tiempo espera Ready: 0.00
+Estado actual: READY
+=========================================
+
+============= PCB Colmena 0 =============
+ID Proceso: 0
+Tiempo de llegada: 1731211685
+Iteraciones totales: 1
+Progreso en pila de código: 0
+Tiempo de espera en E/S: 0
+Promedio tiempo espera E/S: 0.00
+Promedio tiempo espera Ready: 0.00
+Estado actual: READY
+=========================================
+
+============= PCB Colmena 0 =============
+ID Proceso: 0
+Tiempo de llegada: 1731211685
+Iteraciones totales: 1
+Progreso en pila de código: 0
+Tiempo de espera en E/S: 0
+Promedio tiempo espera E/S: 0.00
+Promedio tiempo espera Ready: 0.00
+Estado actual: READY
+=========================================
+
+============= PCB Colmena 0 =============
+ID Proceso: 0
+Tiempo de llegada: 1731211685
+Iteraciones totales: 1
+Progreso en pila de código: 0
+Tiempo de espera en E/S: 0
+Promedio tiempo espera E/S: 0.00
+Promedio tiempo espera Ready: 0.00
+Estado actual: READY
+=========================================
+
+============= PCB Colmena 0 =============
+ID Proceso: 0
+Tiempo de llegada: 1731211685
 Iteraciones totales: 1
 Progreso en pila de código: 0
 Tiempo de espera en E/S: 0
@@ -11,30 +484,8 @@ Estado actual: READY
 
 ============= PCB Colmena 1 =============
 ID Proceso: 1
-Tiempo de llegada: 1731209640
+Tiempo de llegada: 1731211685
 Iteraciones totales: 3
-Progreso en pila de código: 0
-Tiempo de espera en E/S: 0
-Promedio tiempo espera E/S: 0.00
-Promedio tiempo espera Ready: 0.00
-Estado actual: READY
-=========================================
-
-============= PCB Colmena 3 =============
-ID Proceso: 3
-Tiempo de llegada: 1731209640
-Iteraciones totales: 7
-Progreso en pila de código: 0
-Tiempo de espera en E/S: 0
-Promedio tiempo espera E/S: 0.00
-Promedio tiempo espera Ready: 0.00
-Estado actual: READY
-=========================================
-
-============= PCB Colmena 6 =============
-ID Proceso: 6
-Tiempo de llegada: 1731209640
-Iteraciones totales: 14
 Progreso en pila de código: 0
 Tiempo de espera en E/S: 0
 Promedio tiempo espera E/S: 0.00

@@ -1,1 +1,6 @@
-1730845636.00,2979.00,3.00,0.00,0.00,2978
+Promedio tiempo de llegada: 580943.52
+Promedio iteraciones: 0.00
+Promedio progreso en pila de código: 3.00
+Promedio tiempo de espera en E/S: 0.00
+Promedio tiempo de espera Ready: 0.00
+Total de procesos: 2980

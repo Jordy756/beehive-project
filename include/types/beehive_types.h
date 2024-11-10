@@ -19,8 +19,6 @@
 #define MAX_HONEY 40
 #define MIN_EGGS 20
 #define MAX_EGGS 40
-#define MAX_TOTAL_HONEY 1400  // Nuevo: límite máximo de miel por colmena
-#define MAX_TOTAL_EGGS 600    // Nuevo: límite máximo de huevos por colmena
 #define POLEN_TO_HONEY_RATIO 10
 #define QUEEN_BIRTH_PROBABILITY 90
 
@@ -47,31 +45,9 @@ typedef enum {
     WORKER
 } BeeType;
 
-// Roles específicos para cada tipo de abeja
-typedef struct {
-    BeeType type;
-    union {
-        struct {  // Para QUEEN
-            int eggs_laid;
-            time_t last_egg_time;
-            int egg_laying_rate;  // Nuevo: tasa de puesta de huevos
-        } queen;
-        struct {  // Para WORKER
-            int honey_produced;
-            int polen_carried;
-            time_t last_collection_time;  // Nuevo: tiempo de última recolección
-        } worker;
-        struct {  // Para SCOUT
-            bool found_food_source;
-            int discovered_locations;
-            time_t last_search_time;  // Nuevo: tiempo de última búsqueda
-        } scout;
-    } role_data;
-} BeeRole;
-
 typedef struct {
     int id;
-    BeeRole role;
+    BeeType type;
     int polen_collected;
     bool is_alive;
     struct Beehive* hive;
@@ -80,7 +56,6 @@ typedef struct {
     time_t death_time;  // Nueva: para registrar cuando muere una abeja
 } Bee;
 
-// Estructura hexagonal para las celdas
 typedef struct {
     bool has_honey;
     bool has_egg;

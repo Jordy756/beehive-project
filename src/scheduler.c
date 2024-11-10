@@ -7,18 +7,19 @@
 // Static variables for scheduler
 static SchedulingPolicy current_policy = ROUND_ROBIN;
 static int current_quantum;
+static int quantum_counter = 0;
+static int policy_switch_counter = 0;
 static bool sort_by_bees = true;  // Toggle between sorting by bees and honey
 
 // Define job queue
 ProcessInfo* job_queue = NULL;
 int job_queue_size = 0;
 
-// Initialize scheduler control structure
-SchedulerControl scheduler_control = {0};
-
 void init_scheduler(void) {
     current_quantum = random_range(MIN_QUANTUM, MAX_QUANTUM);
     current_policy = ROUND_ROBIN;
+    quantum_counter = 0;
+    policy_switch_counter = 0;
     
     // Initialize job queue
     job_queue = malloc(sizeof(ProcessInfo) * MAX_PROCESSES);
@@ -79,7 +80,6 @@ void update_job_queue(Beehive** beehives, int total_beehives) {
 }
 
 void schedule_process(ProcessControlBlock* pcb) {
-    static int policy_switch_counter = 0;
     policy_switch_counter++;
     
     // Check if we should switch policies
@@ -89,7 +89,6 @@ void schedule_process(ProcessControlBlock* pcb) {
     }
     
     if (current_policy == ROUND_ROBIN) {
-        static int quantum_counter = 0;
         quantum_counter++;
         if (quantum_counter >= current_quantum) {
             update_quantum();
