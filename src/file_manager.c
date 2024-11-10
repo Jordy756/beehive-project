@@ -1,14 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "../include/core/process_manager.h"
+#include "../include/core/file_manager.h"
 
-void init_process_manager(void) {
-    // Create data directory if it doesn't exist
+void init_file_manager(void) {
     system("mkdir -p data");
 }
 
-void save_pcb_to_file(ProcessControlBlock* pcb) {
+void save_pcb(ProcessControlBlock* pcb) {
     FILE* file = fopen(PCB_FILE, "a");
     if (file) {
         fprintf(file, "%d,%ld,%d,%d,%d,%.2f,%.2f,%d\n",
@@ -49,7 +48,7 @@ ProcessTable* load_process_table(void) {
                &table->avg_code_progress,
                &table->avg_io_wait_time,
                &table->avg_ready_wait_time,
-                &table->total_processes);
+               &table->total_processes);
         fclose(file);
     } else {
         // Initialize with default values if file doesn't exist
@@ -67,6 +66,31 @@ void update_process_table(ProcessControlBlock* pcb) {
     table->avg_arrival_time = (table->avg_arrival_time * (table->total_processes - 1) + pcb->arrival_time) / table->total_processes;
     table->avg_iterations = (table->avg_iterations * (table->total_processes - 1) + pcb->iterations) / table->total_processes;
     table->avg_code_progress = (table->avg_code_progress * (table->total_processes - 1) + pcb->code_stack_progress) / table->total_processes;
+    
     save_process_table(table);
     free(table);
+}
+
+void save_beehive_history(Beehive* hive) {
+    FILE* file = fopen(BEEHIVE_HISTORY_FILE, "a");
+    if (file) {
+        time_t current_time;
+        time(&current_time);
+        
+        fprintf(file, "============= Registro de Colmena =============\n");
+        fprintf(file, "Timestamp: %s", ctime(&current_time));
+        fprintf(file, "ID Colmena: %d\n", hive->id);
+        fprintf(file, "Huevos:\n");
+        fprintf(file, "  - Total actual: %d\n", hive->egg_count);
+        fprintf(file, "  - Eclosionados: %d\n", hive->hatched_eggs);
+        fprintf(file, "Abejas:\n");
+        fprintf(file, "  - Muertas: %d\n", hive->dead_bees);
+        fprintf(file, "  - Nacidas: %d\n", hive->born_bees);
+        fprintf(file, "  - Total actual: %d\n", hive->bee_count);
+        fprintf(file, "Miel:\n");
+        fprintf(file, "  - Producida: %d\n", hive->produced_honey);
+        fprintf(file, "  - Total actual: %d\n", hive->honey_count);
+        fprintf(file, "===============================================\n\n");
+        fclose(file);
+    }
 }

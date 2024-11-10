@@ -75,7 +75,10 @@ void init_beehive(Beehive* hive, int id) {
     hive->bee_count = random_range(MIN_BEES, MAX_BEES);
     hive->honey_count = random_range(MIN_HONEY, MAX_HONEY);
     hive->egg_count = random_range(MIN_EGGS, MAX_EGGS);
-    hive->has_queen = false;
+    hive->hatched_eggs = 0;
+    hive->dead_bees = 0;
+    hive->born_bees = 0;
+    hive->produced_honey = 0;
     
     pthread_mutex_init(&hive->chamber_mutex, NULL);
     sem_init(&hive->resource_sem, 0, 1);
@@ -93,10 +96,6 @@ void init_beehive(Beehive* hive, int id) {
         hive->bees[i].is_alive = true;
         hive->bees[i].hive = hive;
         hive->bees[i].last_collection_time = current_time;
-        
-        if (i == queen_index) {
-            hive->has_queen = true;
-        }
     }
     
     // Inicializar cámaras
@@ -143,6 +142,10 @@ void* honey_production_thread(void* arg) {
                         }
                     }
                 }
+            }
+
+            if (honey_produced > 0) {
+                hive->produced_honey += honey_produced;  // Incrementar contador de miel producida
             }
             
             printf("[Hilo Producción Miel - Colmena %d] ", hive->id);
@@ -267,6 +270,8 @@ void* egg_hatching_thread(void* arg) {
                             chamber->cells[x][y].has_egg = false;
                             chamber->egg_count--;
                             hive->egg_count--;
+                            hive->hatched_eggs++;  // Incrementar contador de eclosiones
+                            hive->born_bees++;
                             eggs_hatched++;
                             
                             // Crear nueva abeja si hay espacio

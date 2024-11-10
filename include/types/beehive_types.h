@@ -5,7 +5,7 @@
 #include <semaphore.h>
 #include <stdbool.h>
 #include <time.h>
-#include "process_manager_types.h"
+#include "file_manager_types.h"
 
 // Constantes relacionadas con las colmenas
 #define MAX_CHAMBER_SIZE 10
@@ -19,7 +19,7 @@
 #define MIN_EGGS 20
 #define MAX_EGGS 40
 #define POLEN_TO_HONEY_RATIO 10
-#define QUEEN_BIRTH_PROBABILITY 5
+#define QUEEN_BIRTH_PROBABILITY 90
 
 // Constantes para polen y tiempo de vida
 #define MIN_POLEN_PER_TRIP 1
@@ -84,17 +84,18 @@ typedef struct {
 typedef struct Beehive {
    int id;
    int bee_count;
-   int max_bees;
    int honey_count;
    int egg_count;
-   int max_eggs;
+   int hatched_eggs;    // Contador de huevos eclosionados
+   int dead_bees;       // Contador de abejas muertas
+   int born_bees;       // Contador de abejas nacidas
+   int produced_honey;  // Contador de miel producida
    Bee* bees;
    Chamber chambers[NUM_CHAMBERS];
    pthread_mutex_t chamber_mutex;
    sem_t resource_sem;
    ProcessState state;
    HiveThreads threads;
-   bool has_queen;
 } Beehive;
 
 #endif

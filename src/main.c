@@ -6,12 +6,12 @@
 // Includes de tipos
 #include "../include/types/beehive_types.h"
 #include "../include/types/scheduler_types.h"
-#include "../include/types/process_manager_types.h"
+#include "../include/types/file_manager_types.h"
 
 // Includes de core
 #include "../include/core/beehive.h"
 #include "../include/core/scheduler.h"
-#include "../include/core/process_manager.h"
+#include "../include/core/file_manager.h"
 #include "../include/core/utils.h"
 
 volatile sig_atomic_t running = 1;
@@ -47,7 +47,7 @@ int main() {
     
     init_random();
     init_scheduler();
-    init_process_manager();
+    init_file_manager();
     
     // Initialize beehives array
     for (int i = 0; i < MAX_BEEHIVES; i++) {
@@ -85,7 +85,8 @@ int main() {
             
             if (current_hive != NULL) {
                 pcb.process_id = current_index;
-                
+
+                save_beehive_history(current_hive);
                 schedule_process(&pcb);
                 print_beehive_stats(current_hive);
                 
@@ -113,7 +114,7 @@ int main() {
             }
         }
         
-        save_pcb_to_file(&pcb);
+        save_pcb(&pcb);
         update_process_table(&pcb);
         
         delay_ms(100);
