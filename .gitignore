@@ -1,3 +1,4 @@
 # Ignorar contenido de las carpetas bin y obj
 bin/
 obj/
+.vscode/
