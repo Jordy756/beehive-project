@@ -98,7 +98,8 @@ typedef struct Beehive {
     sem_t resource_sem;
     ProcessState state;
     HiveThreads threads;
-    volatile sig_atomic_t should_terminate;  // Nuevo: para control de terminación
+    volatile sig_atomic_t should_terminate;
+    bool should_create_new_hive;
 } Beehive;
 
 #endif
