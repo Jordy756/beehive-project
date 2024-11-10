@@ -79,16 +79,23 @@ void init_beehive(Beehive* hive, int id) {
     hive->dead_bees = 0;
     hive->born_bees = 0;
     hive->produced_honey = 0;
-    
+    hive->should_terminate = 0;
+
     pthread_mutex_init(&hive->chamber_mutex, NULL);
     sem_init(&hive->resource_sem, 0, 1);
-    
+
+    // Inicializar recursos de producción
+    hive->threads.resources.total_polen = 0;
+    hive->threads.resources.polen_for_honey = 0;
+    hive->threads.resources.total_polen_collected = 0;
+    pthread_mutex_init(&hive->threads.resources.polen_mutex, NULL);
+
     // Initialize bees
     hive->bees = malloc(sizeof(Bee) * hive->bee_count);
     int queen_index = random_range(0, hive->bee_count - 1);
-    
+
     time_t current_time = time(NULL);
-    
+
     for (int i = 0; i < hive->bee_count; i++) {
         hive->bees[i].id = i;
         hive->bees[i].type = (i == queen_index) ? QUEEN : WORKER;
@@ -96,14 +103,13 @@ void init_beehive(Beehive* hive, int id) {
         hive->bees[i].is_alive = true;
         hive->bees[i].hive = hive;
         hive->bees[i].last_collection_time = current_time;
+        hive->bees[i].death_time = 0;
     }
-    
-    // Inicializar cámaras
+
     init_chambers(hive);
-    
     hive->state = READY;
     hive->threads.threads_running = false;
-    
+
     start_hive_threads(hive);
 }
 
@@ -164,51 +170,55 @@ void* honey_production_thread(void* arg) {
 
 void* polen_collection_thread(void* arg) {
     Beehive* hive = (Beehive*)arg;
-    
-    while (hive->threads.threads_running) {
+
+    while (hive->threads.threads_running && !hive->should_terminate) {
         pthread_mutex_lock(&hive->chamber_mutex);
-        
+
         printf("\n[Hilo Recolección Polen - Colmena %d] Iniciando ciclo de recolección\n", hive->id);
         int total_polen_collected = 0;
         int active_workers = 0;
-        
+
         // Solo las obreras recolectan polen
         for (int i = 0; i < hive->bee_count; i++) {
             if (hive->bees[i].type == WORKER && hive->bees[i].is_alive) {
                 active_workers++;
                 int polen = random_range(MIN_POLEN_PER_TRIP, MAX_POLEN_PER_TRIP);
-                
+
                 pthread_mutex_lock(&hive->threads.resources.polen_mutex);
                 hive->threads.resources.total_polen += polen;
                 hive->threads.resources.polen_for_honey += polen;
+                hive->threads.resources.total_polen_collected += polen;
                 total_polen_collected += polen;
-                
-                printf("[Abeja %d] Recolectó %d polen (Total personal: %d)\n", 
+
+                printf("[Abeja %d] Recolectó %d polen (Total personal: %d)\n",
                        hive->bees[i].id, polen, hive->bees[i].polen_collected + polen);
-                
+
                 pthread_mutex_unlock(&hive->threads.resources.polen_mutex);
-                
+
                 hive->bees[i].polen_collected += polen;
-                hive->bees[i].last_collection_time = time(NULL);
-                
+                time_t current_time = time(NULL);
+                hive->bees[i].last_collection_time = current_time;
+
                 // Verificar si la abeja debe morir
                 if (hive->bees[i].polen_collected >= random_range(MIN_POLEN_LIFETIME, MAX_POLEN_LIFETIME)) {
                     hive->bees[i].is_alive = false;
-                    printf("[Abeja %d] ¡Ha muerto! Polen total recolectado en su vida: %d\n", 
+                    hive->bees[i].death_time = current_time;
+                    hive->dead_bees++;  // Incrementar contador de muertes
+                    printf("[Abeja %d] ¡Ha muerto! Polen total recolectado en su vida: %d\n",
                            hive->bees[i].id, hive->bees[i].polen_collected);
                 }
             }
         }
-        
+
         printf("[Hilo Recolección Polen - Colmena %d] ", hive->id);
-        printf("Resumen: %d obreras activas, Polen recolectado en este ciclo: %d, ", 
+        printf("Resumen: %d obreras activas, Polen recolectado en este ciclo: %d, ",
                active_workers, total_polen_collected);
         printf("Polen total en colmena: %d\n", hive->threads.resources.total_polen);
-        
+
         pthread_mutex_unlock(&hive->chamber_mutex);
-        delay_ms(2000); // Aumentado para dar más tiempo entre recolecciones
+        delay_ms(2000);  // Reducido para hacer más frecuente la recolección
     }
-    
+
     return NULL;
 }
 
