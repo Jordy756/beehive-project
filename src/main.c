@@ -20,11 +20,11 @@ Beehive* beehives[MAX_BEEHIVES];
 int total_beehives = 0;
 
 void handle_signal(int sig) {
-    (void)sig;  // Evitar warning de parámetro no usado
-    printf("\nRecibida señal de terminación. Finalizando colmenas...\n");
+    (void)sig;
+    printf("\nRecibida señal de terminación (Ctrl+C). Finalizando el programa...\n");
     running = 0;
-    
-    // Marcar todas las colmenas para terminación
+
+    // Detener todas las colmenas inmediatamente
     for (int i = 0; i < MAX_BEEHIVES; i++) {
         if (beehives[i] != NULL) {
             beehives[i]->should_terminate = 1;
@@ -35,9 +35,17 @@ void handle_signal(int sig) {
 
 void cleanup_all_beehives() {
     printf("\nLimpiando todas las colmenas...\n");
-    for (int i = 0; i < total_beehives; i++) {
+    for (int i = 0; i < MAX_BEEHIVES; i++) {
         if (beehives[i] != NULL) {
             printf("Limpiando colmena #%d...\n", i);
+            
+            // Asegurar que los hilos se detengan
+            beehives[i]->should_terminate = 1;
+            beehives[i]->threads.threads_running = false;
+            
+            // Esperar un momento para que los hilos terminen
+            usleep(100000);  // 100ms
+            
             cleanup_beehive(beehives[i]);
             free(beehives[i]);
             beehives[i] = NULL;
@@ -47,12 +55,15 @@ void cleanup_all_beehives() {
 }
 
 int main() {
-    // Configurar el manejador de señales para SIGINT (Ctrl+C)
+    // Configurar el manejador de señales
     struct sigaction sa;
     sa.sa_handler = handle_signal;
     sigemptyset(&sa.sa_mask);
     sa.sa_flags = 0;
-    sigaction(SIGINT, &sa, NULL);
+    if (sigaction(SIGINT, &sa, NULL) == -1) {
+        perror("Error configurando el manejador de señales");
+        return 1;
+    }
 
     // Inicializaciones
     init_random();
@@ -89,16 +100,22 @@ int main() {
         // Actualizar cola de trabajo con colmenas actuales
         update_job_queue(beehives, total_beehives);
 
-        // Procesar colmenas en el orden determinado
         for (int i = 0; i < job_queue_size && running; i++) {
+            if (!running) break;  // Verificación adicional
+            
             int current_index = job_queue[i].index;
             Beehive* current_hive = beehives[current_index];
 
             if (current_hive != NULL && !current_hive->should_terminate) {
                 pcb.process_id = current_index;
 
-                // Guardar historial y actualizar estado
+                // Forzar flush después de cada escritura
                 save_beehive_history(current_hive);
+                fflush(NULL);  // Forzar flush de todos los streams
+                
+                save_pcb(&pcb);
+                fflush(NULL);
+                
                 schedule_process(&pcb);
                 print_beehive_stats(current_hive);
 
@@ -127,23 +144,25 @@ int main() {
             }
         }
 
-        // Guardar información de proceso
         save_pcb(&pcb);
         update_process_table(&pcb);
+        fflush(NULL);  // Forzar flush de todos los streams
 
-        // Breve pausa para no saturar el CPU
-        delay_ms(100);
-
-        // Verificar si se debe terminar
         if (!running) {
-            printf("Esperando a que las colmenas terminen...\n");
+            printf("\nIniciando proceso de terminación...\n");
             break;
         }
+
+        delay_ms(100);
     }
 
-    // Limpieza final
+    printf("\nEsperando a que todas las colmenas terminen...\n");
     cleanup_all_beehives();
-    free(job_queue);
+    
+    if (job_queue != NULL) {
+        free(job_queue);
+        job_queue = NULL;
+    }
 
     printf("\n=== Simulación Finalizada ===\n");
     printf("- Total de colmenas procesadas: %d\n", total_beehives);

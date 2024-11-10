@@ -12,7 +12,6 @@ void save_pcb(ProcessControlBlock* pcb) {
     char** existing_records = NULL;
     int record_count = 0;
     char line[1024];
-    bool found = false;
 
     // Leer registros existentes
     if (file) {
