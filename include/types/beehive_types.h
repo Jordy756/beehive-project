@@ -29,8 +29,8 @@
 #define MAX_EGG_HATCH_TIME 10
 
 // Constantes para la reina
-#define MIN_EGGS_PER_LAYING 5  // Corregido según el PDF
-#define MAX_EGGS_PER_LAYING 10 // Corregido según el PDF
+#define MIN_EGGS_PER_LAYING 150  // Corregido según el PDF
+#define MAX_EGGS_PER_LAYING 200 // Corregido según el PDF
 
 // Límites
 #define MAX_EGGS_PER_HIVE 400
