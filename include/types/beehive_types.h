@@ -11,7 +11,6 @@
 // Constantes relacionadas con las colmenas
 #define MAX_CHAMBER_SIZE 10
 #define NUM_CHAMBERS 10
-#define INITIAL_BEEHIVES 1
 #define MAX_BEEHIVES 40
 #define MIN_BEES 20
 #define MAX_BEES 40
@@ -27,7 +26,6 @@
 #define MAX_POLEN_PER_TRIP 5
 #define MIN_POLEN_LIFETIME 100
 #define MAX_POLEN_LIFETIME 150
-#define MIN_EGG_HATCH_TIME 1
 #define MAX_EGG_HATCH_TIME 10
 
 // Constantes para la reina
@@ -53,7 +51,6 @@ typedef struct {
     struct Beehive* hive;
     time_t last_collection_time;
     time_t last_egg_laying_time;
-    time_t death_time;  // Nueva: para registrar cuando muere una abeja
 } Bee;
 
 typedef struct {

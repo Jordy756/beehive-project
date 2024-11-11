@@ -101,5 +101,5 @@ void schedule_process(ProcessControlBlock* pcb) {
 
 void update_quantum(void) {
     current_quantum = random_range(MIN_QUANTUM, MAX_QUANTUM);
-    printf("New quantum: %d\n", current_quantum);
+    printf("Nuevo Quantum: %d\n", current_quantum);
 }

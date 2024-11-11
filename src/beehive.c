@@ -103,7 +103,6 @@ void init_beehive(Beehive* hive, int id) {
         hive->bees[i].is_alive = true;
         hive->bees[i].hive = hive;
         hive->bees[i].last_collection_time = current_time;
-        hive->bees[i].death_time = 0;
     }
 
     init_chambers(hive);
@@ -202,7 +201,6 @@ void* polen_collection_thread(void* arg) {
                 // Verificar si la abeja debe morir
                 if (hive->bees[i].polen_collected >= random_range(MIN_POLEN_LIFETIME, MAX_POLEN_LIFETIME)) {
                     hive->bees[i].is_alive = false;
-                    hive->bees[i].death_time = current_time;
                     hive->dead_bees++;  // Incrementar contador de muertes
                     printf("[Abeja %d] ¡Ha muerto! Polen total recolectado en su vida: %d\n",
                            hive->bees[i].id, hive->bees[i].polen_collected);
@@ -315,7 +313,6 @@ void* egg_hatching_thread(void* arg) {
                                     new_bee->hive = hive;
                                     new_bee->last_collection_time = current_time;
                                     new_bee->last_egg_laying_time = current_time;
-                                    new_bee->death_time = 0;
                                     
                                     hive->born_bees++;
                                     
@@ -352,35 +349,6 @@ void stop_hive_threads(Beehive* hive) {
     pthread_join(hive->threads.honey_production, NULL);
     pthread_join(hive->threads.polen_collection, NULL);
     pthread_join(hive->threads.egg_hatching, NULL);
-}
-
-void deposit_polen(Beehive* hive, int polen_amount) {
-    pthread_mutex_lock(&hive->chamber_mutex);
-    
-    int honey_produced = polen_amount / POLEN_TO_HONEY_RATIO;
-    if (honey_produced > 0 && hive->honey_count < MAX_HONEY_PER_HIVE) {
-        for (int c = 0; c < NUM_CHAMBERS && honey_produced > 0; c++) {
-            Chamber* chamber = &hive->chambers[c];
-            // Verificar límite de miel por cámara
-            if (chamber->honey_count >= MAX_HONEY_PER_CHAMBER) {
-                continue;
-            }
-            
-            for (int x = 0; x < MAX_CHAMBER_SIZE && honey_produced > 0; x++) {
-                for (int y = 0; y < MAX_CHAMBER_SIZE && honey_produced > 0; y++) {
-                    if (!is_egg_position(x, y) && !chamber->cells[x][y].has_honey && 
-                        chamber->honey_count < MAX_HONEY_PER_CHAMBER) {
-                        chamber->cells[x][y].has_honey = true;
-                        chamber->honey_count++;
-                        hive->honey_count++;
-                        honey_produced--;
-                    }
-                }
-            }
-        }
-    }
-    
-    pthread_mutex_unlock(&hive->chamber_mutex);
 }
 
 bool check_new_queen(Beehive* hive) {
