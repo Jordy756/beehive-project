@@ -19,6 +19,7 @@ volatile sig_atomic_t running = 1;
 Beehive* beehives[MAX_BEEHIVES];
 int total_beehives = 0;
 
+// Función para manejar señales (Ctrl+C)
 void handle_signal(int sig) {
     (void)sig;
     printf("\nRecibida señal de terminación (Ctrl+C). Finalizando el programa...\n");
@@ -51,7 +52,30 @@ void cleanup_all_beehives() {
             beehives[i] = NULL;
         }
     }
+    
+    // Limpiar el planificador
+    cleanup_scheduler();
     printf("Limpieza completada.\n");
+}
+
+void print_scheduling_info() {
+    printf("\n=== Estado del Planificador ===\n");
+    printf("Política actual: %s\n", 
+           scheduler_state.current_policy == ROUND_ROBIN ? "Round Robin" : "Shortest Job First");
+    
+    if (scheduler_state.current_policy == ROUND_ROBIN) {
+        printf("Quantum actual: %d\n", scheduler_state.current_quantum);
+        printf("Contador de quantum: %d/%d\n", 
+               scheduler_state.quantum_counter, QUANTUM_UPDATE_INTERVAL);
+    } else {
+        printf("Ordenamiento por: %s\n", 
+               scheduler_state.sort_by_bees ? "Cantidad de abejas" : "Cantidad de miel");
+    }
+    
+    printf("Contador para cambio de política: %d/%d\n", 
+           scheduler_state.policy_switch_counter, POLICY_SWITCH_THRESHOLD);
+    printf("Procesos en cola: %d\n", job_queue_size);
+    printf("=============================\n");
 }
 
 int main() {
@@ -93,29 +117,39 @@ int main() {
     };
 
     printf("\n=== Simulación de Colmenas Iniciada ===\n");
-    printf("- Cada colmena tiene %d cámaras (alternando entre miel y cría)\n", NUM_CHAMBERS);
+    printf("- Cada colmena tiene %d cámaras\n", NUM_CHAMBERS);
+    printf("- Política inicial: Round Robin (Quantum: %d)\n", scheduler_state.current_quantum);
     printf("- Presione Ctrl+C para finalizar la simulación\n\n");
 
+    time_t last_stats_time = time(NULL);
+    
     while (running) {
         // Actualizar cola de trabajo con colmenas actuales
         update_job_queue(beehives, total_beehives);
 
+        // Mostrar estadísticas del planificador cada 5 segundos
+        time_t current_time = time(NULL);
+        if (difftime(current_time, last_stats_time) >= 5) {
+            print_scheduling_info();
+            last_stats_time = current_time;
+        }
+
+        // Procesar cada colmena en la cola de trabajo
         for (int i = 0; i < job_queue_size && running; i++) {
-            if (!running) break;  // Verificación adicional
-            
+            if (!running) break;
+
             int current_index = job_queue[i].index;
             Beehive* current_hive = beehives[current_index];
 
             if (current_hive != NULL && !current_hive->should_terminate) {
+                // Proteger acceso a recursos compartidos
+                sem_wait(job_queue[i].shared_resource_sem);
+                
                 pcb.process_id = current_index;
 
-                // Forzar flush después de cada escritura
+                // Actualizar PCB y archivos
                 save_beehive_history(current_hive);
-                fflush(NULL);  // Forzar flush de todos los streams
-                
                 save_pcb(&pcb);
-                fflush(NULL);
-                
                 schedule_process(&pcb);
                 print_beehive_stats(current_hive);
 
@@ -137,32 +171,30 @@ int main() {
 
                         printf("\n=== ¡Nueva Colmena Creada! ===\n");
                         printf("- ID de la nueva colmena: %d\n", new_index);
-                        printf("- Total de colmenas activas: %d/%d\n\n", 
+                        printf("- Total de colmenas activas: %d/%d\n\n",
                                total_beehives, MAX_BEEHIVES);
                     }
                 }
+
+                sem_post(job_queue[i].shared_resource_sem);
             }
         }
 
+        // Actualizar tabla de procesos
         save_pcb(&pcb);
         update_process_table(&pcb);
-        fflush(NULL);  // Forzar flush de todos los streams
 
         if (!running) {
             printf("\nIniciando proceso de terminación...\n");
             break;
         }
 
-        delay_ms(100);
+        // Pequeña pausa para no saturar el CPU
+        delay_ms(8000);
     }
 
     printf("\nEsperando a que todas las colmenas terminen...\n");
     cleanup_all_beehives();
-    
-    if (job_queue != NULL) {
-        free(job_queue);
-        job_queue = NULL;
-    }
 
     printf("\n=== Simulación Finalizada ===\n");
     printf("- Total de colmenas procesadas: %d\n", total_beehives);

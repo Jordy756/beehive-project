@@ -154,8 +154,7 @@ void* honey_production_thread(void* arg) {
             }
             
             printf("[Hilo Producción Miel - Colmena %d] ", hive->id);
-            printf("Miel producida: %d, Total miel en colmena: %d/%d\n", 
-                   honey_produced, hive->honey_count, MAX_HONEY_PER_HIVE);
+            printf("Miel producida: %d, Total miel en colmena: %d/%d\n", honey_produced, hive->honey_count, MAX_HONEY_PER_HIVE);
             
             pthread_mutex_unlock(&hive->chamber_mutex);
         }
