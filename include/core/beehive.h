@@ -13,14 +13,17 @@ void print_chamber_matrix(Beehive* hive);
 // Nueva función para imprimir una cámara específica
 void print_single_chamber(Chamber* chamber, int chamber_index);
 
-// Funciones de los hilos principales
-void* honey_production_thread(void* arg);
-void* polen_collection_thread(void* arg);
-void* egg_hatching_thread(void* arg);
+// Función principal del hilo de la colmena
+void* hive_main_thread(void* arg);
+
+// Funciones de gestión de la colmena (llamadas por el hilo principal)
+void manage_honey_production(Beehive* hive);
+void manage_polen_collection(Beehive* hive);
+void manage_bee_lifecycle(Beehive* hive);
 
 // Control de hilos
-void start_hive_threads(Beehive* hive);
-void stop_hive_threads(Beehive* hive);
+void start_hive_thread(Beehive* hive);
+void stop_hive_thread(Beehive* hive);
 
 // Función auxiliar para inicializar cámaras
 void init_chambers(Beehive* hive);

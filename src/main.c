@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <signal.h>
-#include <time.h>
 
 // Includes de tipos
 #include "../include/types/beehive_types.h"
@@ -30,7 +29,7 @@ void handle_signal(int sig) {
     for (int i = 0; i < MAX_BEEHIVES; i++) {
         if (beehives[i] != NULL) {
             beehives[i]->should_terminate = 1;
-            beehives[i]->threads.threads_running = false;
+            beehives[i]->threads.thread_running = false;
         }
     }
 }
@@ -43,7 +42,7 @@ void cleanup_all_beehives() {
             
             // Asegurar que los hilos se detengan
             beehives[i]->should_terminate = 1;
-            beehives[i]->threads.threads_running = false;
+            beehives[i]->threads.thread_running = false;
             
             // Esperar un momento para que los hilos terminen
             usleep(100000);  // 100ms
@@ -76,30 +75,7 @@ void print_scheduling_info() {
     printf("Contador para cambio de política: %d/%d\n",
            scheduler_state.policy_switch_counter, POLICY_SWITCH_THRESHOLD);
     printf("Procesos en cola: %d\n", job_queue_size);
-
-    // Mostrar estado de procesos activos
-    printf("\nEstado de los procesos:\n");
-    for (int i = 0; i < job_queue_size; i++) {
-        printf("Proceso %d: %s (Prioridad: %d)\n",
-               job_queue[i].index,
-               job_queue[i].is_running ? "Ejecutando" : "Esperando",
-               job_queue[i].priority);
-    }
     printf("=============================\n");
-}
-
-// Función auxiliar para crear nueva colmena
-void create_new_beehive(int index) {
-    beehives[index] = malloc(sizeof(Beehive));
-    if (beehives[index] != NULL) {
-        init_beehive(beehives[index], index);
-        total_beehives++;
-        printf("\n=== ¡Nueva Colmena Creada! ===\n");
-        printf("- ID de la nueva colmena: %d\n", index);
-        printf("- Total de colmenas activas: %d/%d\n\n", total_beehives, MAX_BEEHIVES);
-    } else {
-        printf("Error: No se pudo asignar memoria para la nueva colmena\n");
-    }
 }
 
 int main() {
@@ -124,7 +100,9 @@ int main() {
     }
 
     // Crear colmena inicial
-    create_new_beehive(0);
+    beehives[0] = malloc(sizeof(Beehive));
+    init_beehive(beehives[0], 0);
+    total_beehives = 1;
 
     // Inicializar PCB
     ProcessControlBlock pcb = {
@@ -160,48 +138,45 @@ int main() {
         for (int i = 0; i < job_queue_size && running; i++) {
             if (!running) break;
 
-            ProcessInfo* current_process = &job_queue[i];
-            
-            if (current_process->hive != NULL && !current_process->hive->should_terminate) {
-                // Intentar obtener el semáforo con timeout más corto
-                struct timespec timeout;
-                clock_gettime(CLOCK_REALTIME, &timeout);
-                timeout.tv_nsec += 100000000; // 100ms timeout
-                if (timeout.tv_nsec >= 1000000000) {
-                    timeout.tv_sec++;
-                    timeout.tv_nsec -= 1000000000;
-                }
-                
-                int sem_result = sem_timedwait(current_process->shared_resource_sem, &timeout);
-                if (sem_result == 0) {
-                    pcb.process_id = current_process->index;
-                    
-                    // Ejecutar proceso solo si está activo o es su turno
-                    if (!current_process->is_running || 
-                        scheduler_state.current_policy == ROUND_ROBIN || 
-                        scheduler_state.active_process == current_process) {
-                        
-                        // Actualizar estado y ejecutar
-                        current_process->is_running = true;
-                        save_beehive_history(current_process->hive);
-                        save_pcb(&pcb);
-                        schedule_process(&pcb);
-                        print_beehive_stats(current_process->hive);
+            int current_index = job_queue[i].index;
+            Beehive* current_hive = beehives[current_index];
 
-                        // Verificar nueva reina y crear nueva colmena si es necesario
-                        if (check_new_queen(current_process->hive) && total_beehives < MAX_BEEHIVES) {
-                            for (int j = 0; j < MAX_BEEHIVES; j++) {
-                                if (beehives[j] == NULL) {
-                                    create_new_beehive(j);
-                                    break;
-                                }
-                            }
+            if (current_hive != NULL && !current_hive->should_terminate) {
+                // Proteger acceso a recursos compartidos
+                sem_wait(job_queue[i].shared_resource_sem);
+                
+                pcb.process_id = current_index;
+
+                // Actualizar PCB y archivos
+                save_beehive_history(current_hive);
+                save_pcb(&pcb);
+                schedule_process(&pcb);
+                print_beehive_stats(current_hive);
+
+                // Verificar nueva reina y crear nueva colmena si es posible
+                if (check_new_queen(current_hive) && total_beehives < MAX_BEEHIVES) {
+                    // Encontrar el siguiente índice disponible
+                    int new_index = -1;
+                    for (int j = 0; j < MAX_BEEHIVES; j++) {
+                        if (beehives[j] == NULL) {
+                            new_index = j;
+                            break;
                         }
                     }
 
-                    // Liberar el semáforo inmediatamente después de usar el proceso
-                    sem_post(current_process->shared_resource_sem);
+                    if (new_index != -1) {
+                        beehives[new_index] = malloc(sizeof(Beehive));
+                        init_beehive(beehives[new_index], new_index);
+                        total_beehives++;
+
+                        printf("\n=== ¡Nueva Colmena Creada! ===\n");
+                        printf("- ID de la nueva colmena: %d\n", new_index);
+                        printf("- Total de colmenas activas: %d/%d\n\n",
+                               total_beehives, MAX_BEEHIVES);
+                    }
                 }
+
+                sem_post(job_queue[i].shared_resource_sem);
             }
         }
 
@@ -209,10 +184,13 @@ int main() {
         save_pcb(&pcb);
         update_process_table(&pcb);
 
-        if (!running) break;
+        if (!running) {
+            printf("\nIniciando proceso de terminación...\n");
+            break;
+        }
 
         // Pequeña pausa para no saturar el CPU
-        usleep(100000); // Reducido a 100ms
+        delay_ms(8000);
     }
 
     printf("\nEsperando a que todas las colmenas terminen...\n");

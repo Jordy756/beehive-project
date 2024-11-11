@@ -1,0 +1,1152 @@
+============= Registro de Colmena =============
+Timestamp: Mon Nov 11 17:36:25 2024
+ID Colmena: 0
+Huevos:
+  - Total actual: 20
+  - Eclosionados: 0
+Abejas:
+  - Muertas: 0
+  - Nacidas: 0
+  - Total actual: 20
+Polen:
+  - Total recolectado: 43
+  - Disponible para miel: 44
+Miel:
+  - Producida: 0
+  - Total actual: 37
+===============================================
+
+============= Registro de Colmena =============
+Timestamp: Mon Nov 11 17:36:35 2024
+ID Colmena: 0
+Huevos:
+  - Total actual: 9
+  - Eclosionados: 58
+Abejas:
+  - Muertas: 0
+  - Nacidas: 58
+  - Total actual: 28
+Polen:
+  - Total recolectado: 376
+  - Disponible para miel: 76
+Miel:
+  - Producida: 30
+  - Total actual: 67
+===============================================
+
+============= Registro de Colmena =============
+Timestamp: Mon Nov 11 17:36:37 2024
+ID Colmena: 1
+Huevos:
+  - Total actual: 10
+  - Eclosionados: 80
+Abejas:
+  - Muertas: 0
+  - Nacidas: 61
+  - Total actual: 40
+Polen:
+  - Total recolectado: 629
+  - Disponible para miel: 109
+Miel:
+  - Producida: 52
+  - Total actual: 72
+===============================================
+
+============= Registro de Colmena =============
+Timestamp: Mon Nov 11 17:36:47 2024
+ID Colmena: 0
+Huevos:
+  - Total actual: 5
+  - Eclosionados: 106
+Abejas:
+  - Muertas: 0
+  - Nacidas: 106
+  - Total actual: 31
+Polen:
+  - Total recolectado: 874
+  - Disponible para miel: 74
+Miel:
+  - Producida: 80
+  - Total actual: 117
+===============================================
+
+============= Registro de Colmena =============
+Timestamp: Mon Nov 11 17:36:49 2024
+ID Colmena: 1
+Huevos:
+  - Total actual: 6
+  - Eclosionados: 124
+Abejas:
+  - Muertas: 0
+  - Nacidas: 61
+  - Total actual: 40
+Polen:
+  - Total recolectado: 1320
+  - Disponible para miel: 110
+Miel:
+  - Producida: 121
+  - Total actual: 141
+===============================================
+
+============= Registro de Colmena =============
+Timestamp: Mon Nov 11 17:36:51 2024
+ID Colmena: 2
+Huevos:
+  - Total actual: 6
+  - Eclosionados: 79
+Abejas:
+  - Muertas: 0
+  - Nacidas: 79
+  - Total actual: 36
+Polen:
+  - Total recolectado: 753
+  - Disponible para miel: 113
+Miel:
+  - Producida: 64
+  - Total actual: 93
+===============================================
+
+============= Registro de Colmena =============
+Timestamp: Mon Nov 11 17:36:53 2024
+ID Colmena: 3
+Huevos:
+  - Total actual: 8
+  - Eclosionados: 76
+Abejas:
+  - Muertas: 0
+  - Nacidas: 76
+  - Total actual: 28
+Polen:
+  - Total recolectado: 584
+  - Disponible para miel: 74
+Miel:
+  - Producida: 51
+  - Total actual: 82
+===============================================
+
+============= Registro de Colmena =============
+Timestamp: Mon Nov 11 17:37:03 2024
+ID Colmena: 0
+Huevos:
+  - Total actual: 6
+  - Eclosionados: 167
+Abejas:
+  - Muertas: 0
+  - Nacidas: 167
+  - Total actual: 36
+Polen:
+  - Total recolectado: 1692
+  - Disponible para miel: 102
+Miel:
+  - Producida: 159
+  - Total actual: 196
+===============================================
+
+============= Registro de Colmena =============
+Timestamp: Mon Nov 11 17:37:05 2024
+ID Colmena: 1
+Huevos:
+  - Total actual: 7
+  - Eclosionados: 183
+Abejas:
+  - Muertas: 0
+  - Nacidas: 61
+  - Total actual: 40
+Polen:
+  - Total recolectado: 2263
+  - Disponible para miel: 123
+Miel:
+  - Producida: 214
+  - Total actual: 234
+===============================================
+
+============= Registro de Colmena =============
+Timestamp: Mon Nov 11 17:37:07 2024
+ID Colmena: 2
+Huevos:
+  - Total actual: 9
+  - Eclosionados: 138
+Abejas:
+  - Muertas: 0
+  - Nacidas: 108
+  - Total actual: 40
+Polen:
+  - Total recolectado: 1660
+  - Disponible para miel: 120
+Miel:
+  - Producida: 154
+  - Total actual: 183
+===============================================
+
+============= Registro de Colmena =============
+Timestamp: Mon Nov 11 17:37:09 2024
+ID Colmena: 3
+Huevos:
+  - Total actual: 6
+  - Eclosionados: 132
+Abejas:
+  - Muertas: 0
+  - Nacidas: 132
+  - Total actual: 33
+Polen:
+  - Total recolectado: 1277
+  - Disponible para miel: 97
+Miel:
+  - Producida: 118
+  - Total actual: 149
+===============================================
+
+============= Registro de Colmena =============
+Timestamp: Mon Nov 11 17:37:11 2024
+ID Colmena: 4
+Huevos:
+  - Total actual: 7
+  - Eclosionados: 110
+Abejas:
+  - Muertas: 0
+  - Nacidas: 110
+  - Total actual: 29
+Polen:
+  - Total recolectado: 900
+  - Disponible para miel: 80
+Miel:
+  - Producida: 82
+  - Total actual: 120
+===============================================
+
+============= Registro de Colmena =============
+Timestamp: Mon Nov 11 17:37:13 2024
+ID Colmena: 5
+Huevos:
+  - Total actual: 7
+  - Eclosionados: 94
+Abejas:
+  - Muertas: 0
+  - Nacidas: 94
+  - Total actual: 34
+Polen:
+  - Total recolectado: 1015
+  - Disponible para miel: 95
+Miel:
+  - Producida: 92
+  - Total actual: 112
+===============================================
+
+============= Registro de Colmena =============
+Timestamp: Mon Nov 11 17:37:15 2024
+ID Colmena: 6
+Huevos:
+  - Total actual: 7
+  - Eclosionados: 105
+Abejas:
+  - Muertas: 0
+  - Nacidas: 57
+  - Total actual: 40
+Polen:
+  - Total recolectado: 1263
+  - Disponible para miel: 113
+Miel:
+  - Producida: 115
+  - Total actual: 147
+===============================================
+
+============= Registro de Colmena =============
+Timestamp: Mon Nov 11 17:37:25 2024
+ID Colmena: 12
+Huevos:
+  - Total actual: 5
+  - Eclosionados: 48
+Abejas:
+  - Muertas: 0
+  - Nacidas: 48
+  - Total actual: 37
+Polen:
+  - Total recolectado: 383
+  - Disponible para miel: 113
+Miel:
+  - Producida: 27
+  - Total actual: 49
+===============================================
+
+============= Registro de Colmena =============
+Timestamp: Mon Nov 11 17:37:27 2024
+ID Colmena: 11
+Huevos:
+  - Total actual: 5
+  - Eclosionados: 73
+Abejas:
+  - Muertas: 0
+  - Nacidas: 59
+  - Total actual: 40
+Polen:
+  - Total recolectado: 710
+  - Disponible para miel: 130
+Miel:
+  - Producida: 58
+  - Total actual: 80
+===============================================
+
+============= Registro de Colmena =============
+Timestamp: Mon Nov 11 17:37:29 2024
+ID Colmena: 8
+Huevos:
+  - Total actual: 6
+  - Eclosionados: 107
+Abejas:
+  - Muertas: 0
+  - Nacidas: 107
+  - Total actual: 31
+Polen:
+  - Total recolectado: 754
+  - Disponible para miel: 74
+Miel:
+  - Producida: 68
+  - Total actual: 98
+===============================================
+
+============= Registro de Colmena =============
+Timestamp: Mon Nov 11 17:37:31 2024
+ID Colmena: 10
+Huevos:
+  - Total actual: 8
+  - Eclosionados: 114
+Abejas:
+  - Muertas: 0
+  - Nacidas: 79
+  - Total actual: 40
+Polen:
+  - Total recolectado: 1083
+  - Disponible para miel: 123
+Miel:
+  - Producida: 96
+  - Total actual: 130
+===============================================
+
+============= Registro de Colmena =============
+Timestamp: Mon Nov 11 17:37:33 2024
+ID Colmena: 9
+Huevos:
+  - Total actual: 7
+  - Eclosionados: 105
+Abejas:
+  - Muertas: 0
+  - Nacidas: 17
+  - Total actual: 40
+Polen:
+  - Total recolectado: 1352
+  - Disponible para miel: 112
+Miel:
+  - Producida: 124
+  - Total actual: 158
+===============================================
+
+============= Registro de Colmena =============
+Timestamp: Mon Nov 11 17:37:35 2024
+ID Colmena: 7
+Huevos:
+  - Total actual: 7
+  - Eclosionados: 146
+Abejas:
+  - Muertas: 0
+  - Nacidas: 50
+  - Total actual: 40
+Polen:
+  - Total recolectado: 1827
+  - Disponible para miel: 117
+Miel:
+  - Producida: 171
+  - Total actual: 203
+===============================================
+
+============= Registro de Colmena =============
+Timestamp: Mon Nov 11 17:37:37 2024
+ID Colmena: 5
+Huevos:
+  - Total actual: 7
+  - Eclosionados: 180
+Abejas:
+  - Muertas: 0
+  - Nacidas: 180
+  - Total actual: 39
+Polen:
+  - Total recolectado: 2321
+  - Disponible para miel: 121
+Miel:
+  - Producida: 220
+  - Total actual: 240
+===============================================
+
+============= Registro de Colmena =============
+Timestamp: Mon Nov 11 17:37:39 2024
+ID Colmena: 4
+Huevos:
+  - Total actual: 8
+  - Eclosionados: 208
+Abejas:
+  - Muertas: 0
+  - Nacidas: 208
+  - Total actual: 37
+Polen:
+  - Total recolectado: 2139
+  - Disponible para miel: 119
+Miel:
+  - Producida: 202
+  - Total actual: 240
+===============================================
+
+============= Registro de Colmena =============
+Timestamp: Mon Nov 11 17:37:41 2024
+ID Colmena: 6
+Huevos:
+  - Total actual: 10
+  - Eclosionados: 212
+Abejas:
+  - Muertas: 0
+  - Nacidas: 57
+  - Total actual: 40
+Polen:
+  - Total recolectado: 2757
+  - Disponible para miel: 117
+Miel:
+  - Producida: 264
+  - Total actual: 296
+===============================================
+
+============= Registro de Colmena =============
+Timestamp: Mon Nov 11 17:37:43 2024
+ID Colmena: 3
+Huevos:
+  - Total actual: 9
+  - Eclosionados: 265
+Abejas:
+  - Muertas: 2
+  - Nacidas: 178
+  - Total actual: 40
+Polen:
+  - Total recolectado: 3124
+  - Disponible para miel: 114
+Miel:
+  - Producida: 301
+  - Total actual: 332
+===============================================
+
+============= Registro de Colmena =============
+Timestamp: Mon Nov 11 17:37:45 2024
+ID Colmena: 2
+Huevos:
+  - Total actual: 5
+  - Eclosionados: 279
+Abejas:
+  - Muertas: 11
+  - Nacidas: 108
+  - Total actual: 40
+Polen:
+  - Total recolectado: 3822
+  - Disponible para miel: 92
+Miel:
+  - Producida: 373
+  - Total actual: 402
+===============================================
+
+============= Registro de Colmena =============
+Timestamp: Mon Nov 11 17:37:47 2024
+ID Colmena: 0
+Huevos:
+  - Total actual: 9
+  - Eclosionados: 322
+Abejas:
+  - Muertas: 19
+  - Nacidas: 244
+  - Total actual: 40
+Polen:
+  - Total recolectado: 3862
+  - Disponible para miel: 52
+Miel:
+  - Producida: 381
+  - Total actual: 418
+===============================================
+
+============= Registro de Colmena =============
+Timestamp: Mon Nov 11 17:37:49 2024
+ID Colmena: 1
+Huevos:
+  - Total actual: 8
+  - Eclosionados: 344
+Abejas:
+  - Muertas: 29
+  - Nacidas: 61
+  - Total actual: 40
+Polen:
+  - Total recolectado: 4337
+  - Disponible para miel: 37
+Miel:
+  - Producida: 430
+  - Total actual: 450
+===============================================
+
+============= Registro de Colmena =============
+Timestamp: Mon Nov 11 17:37:59 2024
+ID Colmena: 0
+Huevos:
+  - Total actual: 7
+  - Eclosionados: 370
+Abejas:
+  - Muertas: 24
+  - Nacidas: 292
+  - Total actual: 24
+Polen:
+  - Total recolectado: 3895
+  - Disponible para miel: 5
+Miel:
+  - Producida: 389
+  - Total actual: 426
+===============================================
+
+============= Registro de Colmena =============
+Timestamp: Mon Nov 11 17:38:01 2024
+ID Colmena: 1
+Huevos:
+  - Total actual: 0
+  - Eclosionados: 352
+Abejas:
+  - Muertas: 33
+  - Nacidas: 69
+  - Total actual: 19
+Polen:
+  - Total recolectado: 4511
+  - Disponible para miel: 21
+Miel:
+  - Producida: 449
+  - Total actual: 469
+===============================================
+
+============= Registro de Colmena =============
+Timestamp: Mon Nov 11 17:38:03 2024
+ID Colmena: 2
+Huevos:
+  - Total actual: 8
+  - Eclosionados: 348
+Abejas:
+  - Muertas: 27
+  - Nacidas: 177
+  - Total actual: 32
+Polen:
+  - Total recolectado: 4160
+  - Disponible para miel: 20
+Miel:
+  - Producida: 414
+  - Total actual: 443
+===============================================
+
+============= Registro de Colmena =============
+Timestamp: Mon Nov 11 17:38:05 2024
+ID Colmena: 3
+Huevos:
+  - Total actual: 9
+  - Eclosionados: 339
+Abejas:
+  - Muertas: 20
+  - Nacidas: 183
+  - Total actual: 40
+Polen:
+  - Total recolectado: 3975
+  - Disponible para miel: 55
+Miel:
+  - Producida: 392
+  - Total actual: 423
+===============================================
+
+============= Registro de Colmena =============
+Timestamp: Mon Nov 11 17:38:07 2024
+ID Colmena: 4
+Huevos:
+  - Total actual: 9
+  - Eclosionados: 309
+Abejas:
+  - Muertas: 16
+  - Nacidas: 275
+  - Total actual: 40
+Polen:
+  - Total recolectado: 3570
+  - Disponible para miel: 70
+Miel:
+  - Producida: 350
+  - Total actual: 388
+===============================================
+
+============= Registro de Colmena =============
+Timestamp: Mon Nov 11 17:38:09 2024
+ID Colmena: 5
+Huevos:
+  - Total actual: 9
+  - Eclosionados: 305
+Abejas:
+  - Muertas: 22
+  - Nacidas: 218
+  - Total actual: 40
+Polen:
+  - Total recolectado: 3990
+  - Disponible para miel: 90
+Miel:
+  - Producida: 390
+  - Total actual: 410
+===============================================
+
+============= Registro de Colmena =============
+Timestamp: Mon Nov 11 17:38:11 2024
+ID Colmena: 6
+Huevos:
+  - Total actual: 6
+  - Eclosionados: 326
+Abejas:
+  - Muertas: 29
+  - Nacidas: 57
+  - Total actual: 40
+Polen:
+  - Total recolectado: 4262
+  - Disponible para miel: 42
+Miel:
+  - Producida: 422
+  - Total actual: 454
+===============================================
+
+============= Registro de Colmena =============
+Timestamp: Mon Nov 11 17:38:13 2024
+ID Colmena: 7
+Huevos:
+  - Total actual: 10
+  - Eclosionados: 292
+Abejas:
+  - Muertas: 6
+  - Nacidas: 50
+  - Total actual: 40
+Polen:
+  - Total recolectado: 3999
+  - Disponible para miel: 109
+Miel:
+  - Producida: 389
+  - Total actual: 421
+===============================================
+
+============= Registro de Colmena =============
+Timestamp: Mon Nov 11 17:38:15 2024
+ID Colmena: 8
+Huevos:
+  - Total actual: 9
+  - Eclosionados: 282
+Abejas:
+  - Muertas: 4
+  - Nacidas: 206
+  - Total actual: 40
+Polen:
+  - Total recolectado: 3217
+  - Disponible para miel: 107
+Miel:
+  - Producida: 311
+  - Total actual: 341
+===============================================
+
+============= Registro de Colmena =============
+Timestamp: Mon Nov 11 17:38:17 2024
+ID Colmena: 9
+Huevos:
+  - Total actual: 8
+  - Eclosionados: 261
+Abejas:
+  - Muertas: 6
+  - Nacidas: 17
+  - Total actual: 40
+Polen:
+  - Total recolectado: 3867
+  - Disponible para miel: 107
+Miel:
+  - Producida: 376
+  - Total actual: 410
+===============================================
+
+============= Registro de Colmena =============
+Timestamp: Mon Nov 11 17:38:19 2024
+ID Colmena: 10
+Huevos:
+  - Total actual: 7
+  - Eclosionados: 302
+Abejas:
+  - Muertas: 5
+  - Nacidas: 79
+  - Total actual: 40
+Polen:
+  - Total recolectado: 3833
+  - Disponible para miel: 113
+Miel:
+  - Producida: 372
+  - Total actual: 406
+===============================================
+
+============= Registro de Colmena =============
+Timestamp: Mon Nov 11 17:38:21 2024
+ID Colmena: 11
+Huevos:
+  - Total actual: 5
+  - Eclosionados: 267
+Abejas:
+  - Muertas: 1
+  - Nacidas: 59
+  - Total actual: 40
+Polen:
+  - Total recolectado: 3830
+  - Disponible para miel: 110
+Miel:
+  - Producida: 372
+  - Total actual: 394
+===============================================
+
+============= Registro de Colmena =============
+Timestamp: Mon Nov 11 17:38:23 2024
+ID Colmena: 12
+Huevos:
+  - Total actual: 6
+  - Eclosionados: 253
+Abejas:
+  - Muertas: 5
+  - Nacidas: 69
+  - Total actual: 40
+Polen:
+  - Total recolectado: 3865
+  - Disponible para miel: 115
+Miel:
+  - Producida: 375
+  - Total actual: 397
+===============================================
+
+============= Registro de Colmena =============
+Timestamp: Mon Nov 11 17:38:25 2024
+ID Colmena: 13
+Huevos:
+  - Total actual: 5
+  - Eclosionados: 248
+Abejas:
+  - Muertas: 0
+  - Nacidas: 79
+  - Total actual: 40
+Polen:
+  - Total recolectado: 3309
+  - Disponible para miel: 119
+Miel:
+  - Producida: 319
+  - Total actual: 341
+===============================================
+
+============= Registro de Colmena =============
+Timestamp: Mon Nov 11 17:38:27 2024
+ID Colmena: 14
+Huevos:
+  - Total actual: 10
+  - Eclosionados: 242
+Abejas:
+  - Muertas: 0
+  - Nacidas: 192
+  - Total actual: 40
+Polen:
+  - Total recolectado: 2957
+  - Disponible para miel: 107
+Miel:
+  - Producida: 285
+  - Total actual: 314
+===============================================
+
+============= Registro de Colmena =============
+Timestamp: Mon Nov 11 17:38:29 2024
+ID Colmena: 15
+Huevos:
+  - Total actual: 10
+  - Eclosionados: 242
+Abejas:
+  - Muertas: 0
+  - Nacidas: 71
+  - Total actual: 40
+Polen:
+  - Total recolectado: 3351
+  - Disponible para miel: 131
+Miel:
+  - Producida: 322
+  - Total actual: 348
+===============================================
+
+============= Registro de Colmena =============
+Timestamp: Mon Nov 11 17:38:31 2024
+ID Colmena: 16
+Huevos:
+  - Total actual: 8
+  - Eclosionados: 250
+Abejas:
+  - Muertas: 0
+  - Nacidas: 99
+  - Total actual: 40
+Polen:
+  - Total recolectado: 3303
+  - Disponible para miel: 123
+Miel:
+  - Producida: 318
+  - Total actual: 345
+===============================================
+
+============= Registro de Colmena =============
+Timestamp: Mon Nov 11 17:38:33 2024
+ID Colmena: 17
+Huevos:
+  - Total actual: 10
+  - Eclosionados: 269
+Abejas:
+  - Muertas: 0
+  - Nacidas: 52
+  - Total actual: 40
+Polen:
+  - Total recolectado: 3484
+  - Disponible para miel: 134
+Miel:
+  - Producida: 335
+  - Total actual: 372
+===============================================
+
+============= Registro de Colmena =============
+Timestamp: Mon Nov 11 17:38:35 2024
+ID Colmena: 18
+Huevos:
+  - Total actual: 9
+  - Eclosionados: 251
+Abejas:
+  - Muertas: 0
+  - Nacidas: 200
+  - Total actual: 40
+Polen:
+  - Total recolectado: 2732
+  - Disponible para miel: 122
+Miel:
+  - Producida: 261
+  - Total actual: 284
+===============================================
+
+============= Registro de Colmena =============
+Timestamp: Mon Nov 11 17:38:37 2024
+ID Colmena: 19
+Huevos:
+  - Total actual: 5
+  - Eclosionados: 248
+Abejas:
+  - Muertas: 0
+  - Nacidas: 2
+  - Total actual: 40
+Polen:
+  - Total recolectado: 3470
+  - Disponible para miel: 130
+Miel:
+  - Producida: 334
+  - Total actual: 357
+===============================================
+
+============= Registro de Colmena =============
+Timestamp: Mon Nov 11 17:38:39 2024
+ID Colmena: 20
+Huevos:
+  - Total actual: 7
+  - Eclosionados: 272
+Abejas:
+  - Muertas: 1
+  - Nacidas: 65
+  - Total actual: 40
+Polen:
+  - Total recolectado: 3447
+  - Disponible para miel: 117
+Miel:
+  - Producida: 333
+  - Total actual: 366
+===============================================
+
+============= Registro de Colmena =============
+Timestamp: Mon Nov 11 17:38:41 2024
+ID Colmena: 21
+Huevos:
+  - Total actual: 5
+  - Eclosionados: 237
+Abejas:
+  - Muertas: 1
+  - Nacidas: 32
+  - Total actual: 40
+Polen:
+  - Total recolectado: 3362
+  - Disponible para miel: 132
+Miel:
+  - Producida: 323
+  - Total actual: 363
+===============================================
+
+============= Registro de Colmena =============
+Timestamp: Mon Nov 11 17:38:43 2024
+ID Colmena: 22
+Huevos:
+  - Total actual: 10
+  - Eclosionados: 250
+Abejas:
+  - Muertas: 0
+  - Nacidas: 78
+  - Total actual: 40
+Polen:
+  - Total recolectado: 3313
+  - Disponible para miel: 123
+Miel:
+  - Producida: 319
+  - Total actual: 354
+===============================================
+
+============= Registro de Colmena =============
+Timestamp: Mon Nov 11 17:38:45 2024
+ID Colmena: 23
+Huevos:
+  - Total actual: 10
+  - Eclosionados: 254
+Abejas:
+  - Muertas: 0
+  - Nacidas: 36
+  - Total actual: 40
+Polen:
+  - Total recolectado: 3345
+  - Disponible para miel: 125
+Miel:
+  - Producida: 322
+  - Total actual: 355
+===============================================
+
+============= Registro de Colmena =============
+Timestamp: Mon Nov 11 17:38:55 2024
+ID Colmena: 38
+Huevos:
+  - Total actual: 5
+  - Eclosionados: 112
+Abejas:
+  - Muertas: 0
+  - Nacidas: 112
+  - Total actual: 32
+Polen:
+  - Total recolectado: 909
+  - Disponible para miel: 79
+Miel:
+  - Producida: 83
+  - Total actual: 112
+===============================================
+
+============= Registro de Colmena =============
+Timestamp: Mon Nov 11 17:38:57 2024
+ID Colmena: 35
+Huevos:
+  - Total actual: 9
+  - Eclosionados: 152
+Abejas:
+  - Muertas: 0
+  - Nacidas: 152
+  - Total actual: 35
+Polen:
+  - Total recolectado: 1337
+  - Disponible para miel: 107
+Miel:
+  - Producida: 123
+  - Total actual: 148
+===============================================
+
+============= Registro de Colmena =============
+Timestamp: Mon Nov 11 17:38:59 2024
+ID Colmena: 39
+Huevos:
+  - Total actual: 6
+  - Eclosionados: 135
+Abejas:
+  - Muertas: 0
+  - Nacidas: 131
+  - Total actual: 40
+Polen:
+  - Total recolectado: 1478
+  - Disponible para miel: 138
+Miel:
+  - Producida: 134
+  - Total actual: 164
+===============================================
+
+============= Registro de Colmena =============
+Timestamp: Mon Nov 11 17:39:01 2024
+ID Colmena: 36
+Huevos:
+  - Total actual: 8
+  - Eclosionados: 175
+Abejas:
+  - Muertas: 0
+  - Nacidas: 175
+  - Total actual: 35
+Polen:
+  - Total recolectado: 1565
+  - Disponible para miel: 105
+Miel:
+  - Producida: 146
+  - Total actual: 186
+===============================================
+
+============= Registro de Colmena =============
+Timestamp: Mon Nov 11 17:39:03 2024
+ID Colmena: 37
+Huevos:
+  - Total actual: 7
+  - Eclosionados: 144
+Abejas:
+  - Muertas: 0
+  - Nacidas: 78
+  - Total actual: 40
+Polen:
+  - Total recolectado: 2003
+  - Disponible para miel: 113
+Miel:
+  - Producida: 189
+  - Total actual: 214
+===============================================
+
+============= Registro de Colmena =============
+Timestamp: Mon Nov 11 17:39:05 2024
+ID Colmena: 32
+Huevos:
+  - Total actual: 6
+  - Eclosionados: 215
+Abejas:
+  - Muertas: 0
+  - Nacidas: 150
+  - Total actual: 40
+Polen:
+  - Total recolectado: 2431
+  - Disponible para miel: 131
+Miel:
+  - Producida: 230
+  - Total actual: 250
+===============================================
+
+============= Registro de Colmena =============
+Timestamp: Mon Nov 11 17:39:07 2024
+ID Colmena: 34
+Huevos:
+  - Total actual: 7
+  - Eclosionados: 188
+Abejas:
+  - Muertas: 0
+  - Nacidas: 112
+  - Total actual: 40
+Polen:
+  - Total recolectado: 2630
+  - Disponible para miel: 130
+Miel:
+  - Producida: 250
+  - Total actual: 279
+===============================================
+
+============= Registro de Colmena =============
+Timestamp: Mon Nov 11 17:39:09 2024
+ID Colmena: 33
+Huevos:
+  - Total actual: 8
+  - Eclosionados: 211
+Abejas:
+  - Muertas: 0
+  - Nacidas: 81
+  - Total actual: 40
+Polen:
+  - Total recolectado: 2871
+  - Disponible para miel: 131
+Miel:
+  - Producida: 274
+  - Total actual: 301
+===============================================
+
+============= Registro de Colmena =============
+Timestamp: Mon Nov 11 17:39:11 2024
+ID Colmena: 30
+Huevos:
+  - Total actual: 8
+  - Eclosionados: 252
+Abejas:
+  - Muertas: 0
+  - Nacidas: 134
+  - Total actual: 40
+Polen:
+  - Total recolectado: 3129
+  - Disponible para miel: 119
+Miel:
+  - Producida: 301
+  - Total actual: 329
+===============================================
+
+============= Registro de Colmena =============
+Timestamp: Mon Nov 11 17:39:13 2024
+ID Colmena: 29
+Huevos:
+  - Total actual: 8
+  - Eclosionados: 247
+Abejas:
+  - Muertas: 2
+  - Nacidas: 142
+  - Total actual: 40
+Polen:
+  - Total recolectado: 3300
+  - Disponible para miel: 120
+Miel:
+  - Producida: 318
+  - Total actual: 339
+===============================================
+
+============= Registro de Colmena =============
+Timestamp: Mon Nov 11 17:39:15 2024
+ID Colmena: 25
+Huevos:
+  - Total actual: 6
+  - Eclosionados: 296
+Abejas:
+  - Muertas: 11
+  - Nacidas: 213
+  - Total actual: 40
+Polen:
+  - Total recolectado: 3439
+  - Disponible para miel: 109
+Miel:
+  - Producida: 333
+  - Total actual: 366
+===============================================
+
+============= Registro de Colmena =============
+Timestamp: Mon Nov 11 17:39:17 2024
+ID Colmena: 31
+Huevos:
+  - Total actual: 6
+  - Eclosionados: 243
+Abejas:
+  - Muertas: 1
+  - Nacidas: 88
+  - Total actual: 40
+Polen:
+  - Total recolectado: 3523
+  - Disponible para miel: 113
+Miel:
+  - Producida: 341
+  - Total actual: 373
+===============================================
+
+============= Registro de Colmena =============
+Timestamp: Mon Nov 11 17:39:19 2024
+ID Colmena: 27
+Huevos:
+  - Total actual: 9
+  - Eclosionados: 292
+Abejas:
+  - Muertas: 9
+  - Nacidas: 112
+  - Total actual: 40
+Polen:
+  - Total recolectado: 3880
+  - Disponible para miel: 100
+Miel:
+  - Producida: 378
+  - Total actual: 402
+===============================================
+

@@ -29,8 +29,8 @@
 #define MAX_EGG_HATCH_TIME 10
 
 // Constantes para la reina
-#define MIN_EGGS_PER_LAYING 150  // Corregido según el PDF
-#define MAX_EGGS_PER_LAYING 200 // Corregido según el PDF
+#define MIN_EGGS_PER_LAYING 5
+#define MAX_EGGS_PER_LAYING 10
 
 // Límites
 #define MAX_EGGS_PER_HIVE 400
@@ -68,15 +68,13 @@ typedef struct {
 typedef struct {
     int total_polen;
     int polen_for_honey;
-    int total_polen_collected;  // Nuevo: para el histórico total
+    int total_polen_collected;
     pthread_mutex_t polen_mutex;
 } ProductionResources;
 
 typedef struct {
-    pthread_t honey_production;
-    pthread_t polen_collection;
-    pthread_t egg_hatching;
-    bool threads_running;
+    pthread_t main_thread;      // Único hilo principal
+    bool thread_running;        // Flag para control del hilo
     ProductionResources resources;
 } HiveThreads;
 
