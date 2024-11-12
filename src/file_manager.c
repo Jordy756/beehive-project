@@ -7,72 +7,82 @@ void init_file_manager(void) {
     system("mkdir -p data");
 }
 
-void save_pcb(ProcessControlBlock* pcb) {
-    FILE* file = fopen(PCB_FILE, "r");
-    char** existing_records = NULL;
-    int record_count = 0;
-    char line[1024];
+void write_to_pcb_file(FILE* file, ProcessControlBlock* pcb) {
+    fprintf(file, "============= PCB Colmena %d =============\n", pcb->process_id);
+    fprintf(file, "ID Proceso: %d\n", pcb->process_id);
+    fprintf(file, "Tiempo de llegada: %ld\n", pcb->arrival_time);
+    fprintf(file, "Iteraciones totales: %d\n", pcb->iterations);
+    fprintf(file, "Progreso en pila de código: %d\n", pcb->code_stack_progress);
+    fprintf(file, "Tiempo de espera en E/S: %d\n", pcb->io_wait_time);
+    fprintf(file, "Promedio tiempo espera E/S: %.2f\n", pcb->avg_io_wait_time);
+    fprintf(file, "Promedio tiempo espera Ready: %.2f\n", pcb->avg_ready_wait_time);
+    fprintf(file, "Estado actual: %s\n",
+        pcb->state == READY ? "READY" :
+        pcb->state == RUNNING ? "RUNNING" :
+        pcb->state == WAITING ? "WAITING" : "TERMINATED");
+    fprintf(file, "=========================================\n\n");
+}
 
-    // Leer registros existentes
+void save_pcb(ProcessControlBlock* pcb) {
+    // Primero verificar si el proceso ya existe
+    FILE* file = fopen(PCB_FILE, "r");
+    bool exists = false;
+    char line[1024];
+    
     if (file) {
-        existing_records = malloc(sizeof(char*) * MAX_BEEHIVES);
-        char temp_record[4096] = "";  // Buffer temporal para construir cada registro
-        int current_id = -1;
-        
         while (fgets(line, sizeof(line), file)) {
-            if (sscanf(line, "============= PCB Colmena %d =============", &current_id) == 1) {
-                // Si ya teníamos un registro pendiente, guardarlo
-                if (strlen(temp_record) > 0 && current_id != pcb->process_id) {
-                    existing_records[record_count] = strdup(temp_record);
-                    record_count++;
+            int id;
+            if (sscanf(line, "============= PCB Colmena %d =============", &id) == 1) {
+                if (id == pcb->process_id) {
+                    exists = true;
+                    break;
                 }
-                // Empezar nuevo registro
-                strcpy(temp_record, line);
-            } else {
-                strcat(temp_record, line);
             }
         }
-        // Guardar el último registro si existe y no es del proceso actual
-        if (strlen(temp_record) > 0 && current_id != pcb->process_id) {
-            existing_records[record_count] = strdup(temp_record);
-            record_count++;
-        }
         fclose(file);
     }
-
-    // Escribir el archivo nuevo
-    file = fopen(PCB_FILE, "w");
-    if (file) {
-        // Escribir el registro actual
-        fprintf(file, "============= PCB Colmena %d =============\n", pcb->process_id);
-        fprintf(file, "ID Proceso: %d\n", pcb->process_id);
-        fprintf(file, "Tiempo de llegada: %ld\n", pcb->arrival_time);
-        fprintf(file, "Iteraciones totales: %d\n", pcb->iterations);
-        fprintf(file, "Progreso en pila de código: %d\n", pcb->code_stack_progress);
-        fprintf(file, "Tiempo de espera en E/S: %d\n", pcb->io_wait_time);
-        fprintf(file, "Promedio tiempo espera E/S: %.2f\n", pcb->avg_io_wait_time);
-        fprintf(file, "Promedio tiempo espera Ready: %.2f\n", pcb->avg_ready_wait_time);
-        fprintf(file, "Estado actual: %s\n", 
-            pcb->state == READY ? "READY" :
-            pcb->state == RUNNING ? "RUNNING" :
-            pcb->state == WAITING ? "WAITING" : "TERMINATED");
-        fprintf(file, "=========================================\n\n");
-
-        // Escribir los registros existentes de otros procesos
-        for (int i = 0; i < record_count; i++) {
-            fprintf(file, "%s", existing_records[i]);
+    
+    if (!exists) {
+        // Si no existe, simplemente agregar al final
+        file = fopen(PCB_FILE, "a");
+        if (file) {
+            write_to_pcb_file(file, pcb);
+            fflush(file);
+            fclose(file);
         }
-
-        fflush(file);
-        fclose(file);
-    }
-
-    // Liberar memoria
-    if (existing_records) {
-        for (int i = 0; i < record_count; i++) {
-            free(existing_records[i]);
+    } else {
+        // Si existe, crear archivo temporal y reescribir
+        FILE* temp = fopen("data/pcb_temp.txt", "w");
+        file = fopen(PCB_FILE, "r");
+        
+        if (temp && file) {
+            bool skipping = false;
+            while (fgets(line, sizeof(line), file)) {
+                int id;
+                if (sscanf(line, "============= PCB Colmena %d =============", &id) == 1) {
+                    if (id == pcb->process_id) {
+                        write_to_pcb_file(temp, pcb);
+                        skipping = true;
+                    } else {
+                        skipping = false;
+                    }
+                }
+                
+                if (!skipping) {
+                    fputs(line, temp);
+                }
+            }
+            
+            fclose(file);
+            fclose(temp);
+            
+            // Reemplazar el archivo original con el temporal
+            remove(PCB_FILE);
+            rename("data/pcb_temp.txt", PCB_FILE);
+        } else {
+            if (temp) fclose(temp);
+            if (file) fclose(file);
         }
-        free(existing_records);
     }
 }
 

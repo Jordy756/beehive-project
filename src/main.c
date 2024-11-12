@@ -190,7 +190,7 @@ int main() {
         }
 
         // Pequeña pausa para no saturar el CPU
-        delay_ms(8000);
+        delay_ms(100);
     }
 
     printf("\nEsperando a que todas las colmenas terminen...\n");
