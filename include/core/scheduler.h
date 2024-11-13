@@ -15,8 +15,14 @@ void* policy_control_thread(void* arg);
 // Funciones de planificación
 void schedule_process(ProcessControlBlock* pcb);
 void update_quantum(void);
-void sort_processes_sjf(ProcessInfo* processes, int count, bool by_bees);
 void update_job_queue(Beehive** beehives, int total_beehives);
+
+// Nuevas funciones para FSJ
+void sort_processes_fsj(ProcessInfo* processes, int count);
+bool should_preempt_fsj(ProcessInfo* new_process, ProcessInfo* current_process);
+void update_process_resources(ProcessInfo* process);
+void check_fsj_preemption(ProcessInfo* process);
+void handle_fsj_preemption(void);
 
 // Control de procesos
 void preempt_current_process(void);
@@ -30,7 +36,7 @@ void update_process_priority(ProcessInfo* process);
 void init_process_semaphores(ProcessInfo* process);
 void cleanup_process_semaphores(ProcessInfo* process);
 
-// Nuevas funciones para E/S
+// Funciones para E/S
 void init_io_queue(void);
 void cleanup_io_queue(void);
 void* io_manager_thread(void* arg);

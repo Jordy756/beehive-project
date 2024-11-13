@@ -58,7 +58,26 @@ void cleanup_all_beehives() {
     printf("Limpieza completada.\n");
 }
 
-void print_io_stats(void) {
+void print_process_resources() {
+    printf("\n=== Recursos de Procesos ===\n");
+    for (int i = 0; i < job_queue_size; i++) {
+        ProcessInfo* process = &job_queue[i];
+        update_process_resources(process);
+        printf("Proceso %d (Colmena %d):\n", i, process->index);
+        printf("  - Abejas: %d\n", process->resources.bee_count);
+        printf("  - Miel: %d\n", process->resources.honey_count);
+        printf("  - Total recursos: %d\n", process->resources.total_resources);
+        printf("  - Estado: %s\n", 
+               process->is_running ? "En ejecución" : 
+               process->in_io ? "En E/S" : "Listo");
+        if (process->preempted) {
+            printf("  - Interrumpido en: %s", ctime(&process->preemption_time));
+        }
+    }
+    printf("===========================\n");
+}
+
+void print_io_stats() {
     printf("\n=== Estado de E/S ===\n");
     pthread_mutex_lock(&scheduler_state.io_queue->mutex);
     printf("Procesos en E/S: %d\n", scheduler_state.io_queue->size);
@@ -78,23 +97,32 @@ void print_io_stats(void) {
     printf("==================\n");
 }
 
-void print_scheduling_info(void) {
+void print_scheduling_info() {
     printf("\n=== Estado del Planificador ===\n");
     printf("Política actual: %s\n",
-           scheduler_state.current_policy == ROUND_ROBIN ? "Round Robin" : "Shortest Job First");
+           scheduler_state.current_policy == ROUND_ROBIN ? "Round Robin" : "Shortest Job First (FSJ)");
     
     if (scheduler_state.current_policy == ROUND_ROBIN) {
         printf("Quantum actual: %d\n", scheduler_state.current_quantum);
         printf("Contador de quantum: %d/%d\n",
                scheduler_state.quantum_counter, QUANTUM_UPDATE_INTERVAL);
-    } else {
-        printf("Ordenamiento por: %s\n",
-               scheduler_state.sort_by_bees ? "Cantidad de abejas" : "Cantidad de miel");
     }
     
     printf("Contador para cambio de política: %d/%d\n",
            scheduler_state.policy_switch_counter, POLICY_SWITCH_THRESHOLD);
     printf("Procesos en cola: %d\n", job_queue_size);
+    
+    // Mostrar proceso activo
+    if (scheduler_state.active_process != NULL) {
+        printf("\nProceso activo: %d\n", scheduler_state.active_process->index);
+        printf("Recursos del proceso activo:\n");
+        printf("  - Abejas: %d\n", scheduler_state.active_process->resources.bee_count);
+        printf("  - Miel: %d\n", scheduler_state.active_process->resources.honey_count);
+        printf("  - Total: %d\n", scheduler_state.active_process->resources.total_resources);
+    }
+    
+    // Mostrar recursos de todos los procesos
+    print_process_resources();
     
     // Añadir información de E/S
     print_io_stats();
@@ -142,6 +170,7 @@ int main() {
     printf("\n=== Simulación de Colmenas Iniciada ===\n");
     printf("- Cada colmena tiene %d cámaras\n", NUM_CHAMBERS);
     printf("- Política inicial: Round Robin (Quantum: %d)\n", scheduler_state.current_quantum);
+    printf("- FSJ se basa en total de recursos (abejas + miel)\n");
     printf("- Presione Ctrl+C para finalizar la simulación\n\n");
 
     time_t last_stats_time = time(NULL);
@@ -149,6 +178,12 @@ int main() {
     while (running) {
         // Actualizar cola de trabajo con colmenas actuales
         update_job_queue(beehives, total_beehives);
+
+        // Verificar preemption en FSJ si hay proceso activo
+        if (scheduler_state.current_policy == SHORTEST_JOB_FIRST && 
+            scheduler_state.active_process != NULL) {
+            handle_fsj_preemption();
+        }
 
         // Mostrar estadísticas del planificador cada 5 segundos
         time_t current_time = time(NULL);
@@ -173,7 +208,13 @@ int main() {
                 // Actualizar PCB y archivos
                 save_beehive_history(current_hive);
                 save_pcb(&pcb);
+                
+                // Programar proceso y verificar preemption
                 schedule_process(&pcb);
+                if (scheduler_state.current_policy == SHORTEST_JOB_FIRST) {
+                    check_fsj_preemption(&job_queue[i]);
+                }
+                
                 print_beehive_stats(current_hive);
 
                 // Verificar nueva reina y crear nueva colmena si es posible
