@@ -18,7 +18,7 @@ void update_quantum(void);
 void sort_processes_sjf(ProcessInfo* processes, int count, bool by_bees);
 void update_job_queue(Beehive** beehives, int total_beehives);
 
-// Nuevas funciones de control de procesos
+// Control de procesos
 void preempt_current_process(void);
 void resume_process(ProcessInfo* process);
 void suspend_process(ProcessInfo* process);
@@ -29,5 +29,15 @@ void update_process_priority(ProcessInfo* process);
 // Control de semáforos
 void init_process_semaphores(ProcessInfo* process);
 void cleanup_process_semaphores(ProcessInfo* process);
+
+// Nuevas funciones para E/S
+void init_io_queue(void);
+void cleanup_io_queue(void);
+void* io_manager_thread(void* arg);
+bool check_and_handle_io(ProcessInfo* process);
+void add_to_io_queue(ProcessInfo* process);
+void process_io_queue(void);
+void return_to_ready_queue(ProcessInfo* process);
+void reorder_ready_queue(void);
 
 #endif

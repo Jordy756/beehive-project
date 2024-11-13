@@ -10,8 +10,21 @@ ProcessInfo* job_queue = NULL;
 int job_queue_size = 0;
 SchedulerState scheduler_state;
 
+void init_io_queue(void) {
+    scheduler_state.io_queue = malloc(sizeof(IOQueue));
+    scheduler_state.io_queue->size = 0;
+    pthread_mutex_init(&scheduler_state.io_queue->mutex, NULL);
+    pthread_cond_init(&scheduler_state.io_queue->condition, NULL);
+}
+
+void cleanup_io_queue(void) {
+    pthread_mutex_destroy(&scheduler_state.io_queue->mutex);
+    pthread_cond_destroy(&scheduler_state.io_queue->condition);
+    free(scheduler_state.io_queue);
+}
+
 void switch_scheduling_policy(void) {
-    scheduler_state.current_policy = (scheduler_state.current_policy == ROUND_ROBIN) ? 
+    scheduler_state.current_policy = (scheduler_state.current_policy == ROUND_ROBIN) ?
                                    SHORTEST_JOB_FIRST : ROUND_ROBIN;
     
     if (scheduler_state.current_policy == SHORTEST_JOB_FIRST) {
@@ -64,13 +77,18 @@ void init_scheduler(void) {
     job_queue = malloc(sizeof(ProcessInfo) * MAX_PROCESSES);
     job_queue_size = 0;
     
-    // Iniciar hilo de control de política
+    // Inicializar cola de E/S
+    init_io_queue();
+    
+    // Iniciar hilos de control
     pthread_create(&scheduler_state.policy_control_thread, NULL, policy_control_thread, NULL);
+    pthread_create(&scheduler_state.io_thread, NULL, io_manager_thread, NULL);
 }
 
 void cleanup_scheduler(void) {
     scheduler_state.running = false;
     pthread_join(scheduler_state.policy_control_thread, NULL);
+    pthread_join(scheduler_state.io_thread, NULL);
     
     sem_destroy(&scheduler_state.scheduler_sem);
     sem_destroy(&scheduler_state.queue_sem);
@@ -79,7 +97,111 @@ void cleanup_scheduler(void) {
         cleanup_process_semaphores(&job_queue[i]);
     }
     
+    cleanup_io_queue();
     free(job_queue);
+}
+
+bool check_and_handle_io(ProcessInfo* process) {
+    if (process == NULL || process->in_io) return false;
+    
+    // 5% de probabilidad de entrar a E/S
+    if (random_range(1, 100) <= IO_PROBABILITY) {
+        printf("\nProceso %d entrando a E/S\n", process->index);
+        process->in_io = true;
+        add_to_io_queue(process);
+        return true;
+    }
+    return false;
+}
+
+void add_to_io_queue(ProcessInfo* process) {
+    pthread_mutex_lock(&scheduler_state.io_queue->mutex);
+    
+    if (scheduler_state.io_queue->size < MAX_IO_QUEUE_SIZE) {
+        IOQueueEntry* entry = &scheduler_state.io_queue->entries[scheduler_state.io_queue->size];
+        entry->process = process;
+        entry->wait_time = random_range(MIN_IO_WAIT, MAX_IO_WAIT);
+        entry->start_time = time(NULL);
+        scheduler_state.io_queue->size++;
+        
+        printf("Proceso %d añadido a cola de E/S. Tiempo de espera: %d ms\n", 
+               process->index, entry->wait_time);
+    }
+    
+    pthread_mutex_unlock(&scheduler_state.io_queue->mutex);
+    pthread_cond_signal(&scheduler_state.io_queue->condition);
+}
+
+void process_io_queue(void) {
+    pthread_mutex_lock(&scheduler_state.io_queue->mutex);
+    
+    time_t current_time = time(NULL);
+    int i = 0;
+    
+    while (i < scheduler_state.io_queue->size) {
+        IOQueueEntry* entry = &scheduler_state.io_queue->entries[i];
+        double elapsed_ms = difftime(current_time, entry->start_time) * 1000;
+        
+        if (elapsed_ms >= entry->wait_time) {
+            // Proceso completó su tiempo de E/S
+            printf("Proceso %d completó E/S. Retornando a cola de listos\n", entry->process->index);
+            
+            entry->process->in_io = false;
+            return_to_ready_queue(entry->process);
+            
+            // Remover de la cola de E/S
+            for (int j = i; j < scheduler_state.io_queue->size - 1; j++) {
+                scheduler_state.io_queue->entries[j] = scheduler_state.io_queue->entries[j + 1];
+            }
+            scheduler_state.io_queue->size--;
+        } else {
+            i++;
+        }
+    }
+    
+    pthread_mutex_unlock(&scheduler_state.io_queue->mutex);
+}
+
+void return_to_ready_queue(ProcessInfo* process) {
+    sem_wait(&scheduler_state.queue_sem);
+    
+    process->is_running = false;
+    process->in_io = false;
+    reset_process_timeslice(process);
+    
+    if (scheduler_state.current_policy == SHORTEST_JOB_FIRST) {
+        reorder_ready_queue();
+    }
+    
+    sem_post(&scheduler_state.queue_sem);
+}
+
+void reorder_ready_queue(void) {
+    sort_processes_sjf(job_queue, job_queue_size, scheduler_state.sort_by_bees);
+}
+
+void* io_manager_thread(void* arg) {
+    (void)arg;
+    
+    while (scheduler_state.running) {
+        pthread_mutex_lock(&scheduler_state.io_queue->mutex);
+        
+        while (scheduler_state.io_queue->size == 0 && scheduler_state.running) {
+            pthread_cond_wait(&scheduler_state.io_queue->condition, &scheduler_state.io_queue->mutex);
+        }
+        
+        if (!scheduler_state.running) {
+            pthread_mutex_unlock(&scheduler_state.io_queue->mutex);
+            break;
+        }
+        
+        pthread_mutex_unlock(&scheduler_state.io_queue->mutex);
+        
+        process_io_queue();
+        usleep(1000); // 1ms de espera entre revisiones
+    }
+    
+    return NULL;
 }
 
 void preempt_current_process(void) {
@@ -124,7 +246,6 @@ void reset_process_timeslice(ProcessInfo* process) {
 
 void update_process_priority(ProcessInfo* process) {
     if (process != NULL) {
-        // Prioridad basada en tiempo de espera y recursos
         int wait_time = (int)difftime(time(NULL), process->last_quantum_start);
         process->priority = wait_time + (process->hive->bee_count / 10);
     }
@@ -148,13 +269,15 @@ void* policy_control_thread(void* arg) {
         }
         
         // Verificar si el proceso actual debe ser interrumpido
-        if (scheduler_state.active_process != NULL &&
-            should_preempt_process(scheduler_state.active_process)) {
-            preempt_current_process();
+        if (scheduler_state.active_process != NULL) {
+            if (should_preempt_process(scheduler_state.active_process) ||
+                check_and_handle_io(scheduler_state.active_process)) {
+                preempt_current_process();
+            }
         }
         
         sem_post(&scheduler_state.scheduler_sem);
-        usleep(50000); // Reducido a 50ms para mayor responsividad
+        usleep(50000); // 50ms
     }
     
     return NULL;
@@ -177,6 +300,7 @@ void update_job_queue(Beehive** beehives, int total_beehives) {
             process->hive = beehives[i];
             process->index = i;
             process->is_running = false;
+            process->in_io = false;
             process->remaining_time_slice = PROCESS_TIME_SLICE;
             init_process_semaphores(process);
             update_process_priority(process);
@@ -201,7 +325,7 @@ void schedule_process(ProcessControlBlock* pcb) {
     ProcessInfo* next_process = NULL;
     
     for (int i = 0; i < job_queue_size; i++) {
-        if (!job_queue[i].is_running) {
+        if (!job_queue[i].is_running && !job_queue[i].in_io) {
             next_process = &job_queue[i];
             break;
         }

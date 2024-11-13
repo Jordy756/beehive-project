@@ -58,7 +58,27 @@ void cleanup_all_beehives() {
     printf("Limpieza completada.\n");
 }
 
-void print_scheduling_info() {
+void print_io_stats(void) {
+    printf("\n=== Estado de E/S ===\n");
+    pthread_mutex_lock(&scheduler_state.io_queue->mutex);
+    printf("Procesos en E/S: %d\n", scheduler_state.io_queue->size);
+    if (scheduler_state.io_queue->size > 0) {
+        printf("Detalles de procesos en E/S:\n");
+        for (int i = 0; i < scheduler_state.io_queue->size; i++) {
+            IOQueueEntry* entry = &scheduler_state.io_queue->entries[i];
+            time_t current_time = time(NULL);
+            double elapsed_ms = difftime(current_time, entry->start_time) * 1000;
+            printf("- Proceso %d: Tiempo restante: %.0f/%d ms\n",
+                   entry->process->index,
+                   (double)entry->wait_time - elapsed_ms,
+                   entry->wait_time);
+        }
+    }
+    pthread_mutex_unlock(&scheduler_state.io_queue->mutex);
+    printf("==================\n");
+}
+
+void print_scheduling_info(void) {
     printf("\n=== Estado del Planificador ===\n");
     printf("Política actual: %s\n",
            scheduler_state.current_policy == ROUND_ROBIN ? "Round Robin" : "Shortest Job First");
@@ -75,6 +95,9 @@ void print_scheduling_info() {
     printf("Contador para cambio de política: %d/%d\n",
            scheduler_state.policy_switch_counter, POLICY_SWITCH_THRESHOLD);
     printf("Procesos en cola: %d\n", job_queue_size);
+    
+    // Añadir información de E/S
+    print_io_stats();
     printf("=============================\n");
 }
 
