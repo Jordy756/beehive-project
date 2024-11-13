@@ -119,21 +119,48 @@ void init_scheduler(void) {
     pthread_create(&scheduler_state.io_thread, NULL, io_manager_thread, NULL);
 }
 
+void cleanup_process_semaphores_safe(ProcessInfo* process) {
+    if (process && process->shared_resource_sem) {
+        sem_post(process->shared_resource_sem); // Asegurar que no hay bloqueos
+        cleanup_process_semaphores(process);
+    }
+}
+
 void cleanup_scheduler(void) {
+    // Marcar que el scheduler debe detenerse
     scheduler_state.running = false;
+    
+    // Despertar hilos bloqueados
+    pthread_mutex_lock(&scheduler_state.io_queue->mutex);
+    pthread_cond_broadcast(&scheduler_state.io_queue->condition);
+    pthread_mutex_unlock(&scheduler_state.io_queue->mutex);
+    
+    // Despertar semáforos
+    sem_post(&scheduler_state.scheduler_sem);
+    sem_post(&scheduler_state.queue_sem);
+    
+    // Dar tiempo para terminar operaciones pendientes
+    usleep(100000); // 100ms
+    
+    // Unir hilos principales con manejo de errores simple
     pthread_join(scheduler_state.policy_control_thread, NULL);
     pthread_join(scheduler_state.io_thread, NULL);
     
+    // Limpiar recursos
+    cleanup_io_queue();
     sem_destroy(&scheduler_state.scheduler_sem);
     sem_destroy(&scheduler_state.queue_sem);
     pthread_mutex_destroy(&scheduler_state.preemption_mutex);
     
+    // Limpiar procesos
     for (int i = 0; i < job_queue_size; i++) {
-        cleanup_process_semaphores(&job_queue[i]);
+        if (job_queue[i].shared_resource_sem) {
+            cleanup_process_semaphores(&job_queue[i]);
+        }
     }
     
-    cleanup_io_queue();
     free(job_queue);
+    printf("Planificador limpiado correctamente\n");
 }
 
 bool check_and_handle_io(ProcessInfo* process) {
