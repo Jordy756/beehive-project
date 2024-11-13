@@ -11,7 +11,6 @@
 // Constantes relacionadas con las colmenas
 #define MAX_CHAMBER_SIZE 10
 #define NUM_CHAMBERS 10
-#define INITIAL_BEEHIVES 1
 #define MAX_BEEHIVES 40
 #define MIN_BEES 20
 #define MAX_BEES 40
@@ -27,12 +26,11 @@
 #define MAX_POLEN_PER_TRIP 5
 #define MIN_POLEN_LIFETIME 100
 #define MAX_POLEN_LIFETIME 150
-#define MIN_EGG_HATCH_TIME 1
 #define MAX_EGG_HATCH_TIME 10
 
 // Constantes para la reina
-#define MIN_EGGS_PER_LAYING 5  // Corregido según el PDF
-#define MAX_EGGS_PER_LAYING 10 // Corregido según el PDF
+#define MIN_EGGS_PER_LAYING 5
+#define MAX_EGGS_PER_LAYING 10
 
 // Límites
 #define MAX_EGGS_PER_HIVE 400
@@ -53,7 +51,6 @@ typedef struct {
     struct Beehive* hive;
     time_t last_collection_time;
     time_t last_egg_laying_time;
-    time_t death_time;  // Nueva: para registrar cuando muere una abeja
 } Bee;
 
 typedef struct {
@@ -71,15 +68,13 @@ typedef struct {
 typedef struct {
     int total_polen;
     int polen_for_honey;
-    int total_polen_collected;  // Nuevo: para el histórico total
+    int total_polen_collected;
     pthread_mutex_t polen_mutex;
 } ProductionResources;
 
 typedef struct {
-    pthread_t honey_production;
-    pthread_t polen_collection;
-    pthread_t egg_hatching;
-    bool threads_running;
+    pthread_t main_thread;      // Único hilo principal
+    bool thread_running;        // Flag para control del hilo
     ProductionResources resources;
 } HiveThreads;
 
@@ -98,7 +93,8 @@ typedef struct Beehive {
     sem_t resource_sem;
     ProcessState state;
     HiveThreads threads;
-    volatile sig_atomic_t should_terminate;  // Nuevo: para control de terminación
+    volatile sig_atomic_t should_terminate;
+    bool should_create_new_hive;
 } Beehive;
 
 #endif

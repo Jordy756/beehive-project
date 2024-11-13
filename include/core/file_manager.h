@@ -8,6 +8,7 @@
 void init_file_manager(void);
 
 // Funciones para PCB
+void write_to_pcb_file(FILE* file, ProcessControlBlock* pcb);
 void save_pcb(ProcessControlBlock* pcb);
 
 // Funciones para tabla de procesos

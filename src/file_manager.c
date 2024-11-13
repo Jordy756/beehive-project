@@ -7,70 +7,82 @@ void init_file_manager(void) {
     system("mkdir -p data");
 }
 
+void write_to_pcb_file(FILE* file, ProcessControlBlock* pcb) {
+    fprintf(file, "============= PCB Colmena %d =============\n", pcb->process_id);
+    fprintf(file, "ID Proceso: %d\n", pcb->process_id);
+    fprintf(file, "Tiempo de llegada: %ld\n", pcb->arrival_time);
+    fprintf(file, "Iteraciones totales: %d\n", pcb->iterations);
+    fprintf(file, "Progreso en pila de código: %d\n", pcb->code_stack_progress);
+    fprintf(file, "Tiempo de espera en E/S: %d\n", pcb->io_wait_time);
+    fprintf(file, "Promedio tiempo espera E/S: %.2f\n", pcb->avg_io_wait_time);
+    fprintf(file, "Promedio tiempo espera Ready: %.2f\n", pcb->avg_ready_wait_time);
+    fprintf(file, "Estado actual: %s\n",
+        pcb->state == READY ? "READY" :
+        pcb->state == RUNNING ? "RUNNING" :
+        pcb->state == WAITING ? "WAITING" : "TERMINATED");
+    fprintf(file, "=========================================\n\n");
+}
+
 void save_pcb(ProcessControlBlock* pcb) {
+    // Primero verificar si el proceso ya existe
     FILE* file = fopen(PCB_FILE, "r");
-    FILE* temp = fopen("data/pcb_temp.txt", "w");
-    char line[256];
-    bool found = false;
+    bool exists = false;
+    char line[1024];
     
-    // Si el archivo original existe, buscar y actualizar el registro
     if (file) {
         while (fgets(line, sizeof(line), file)) {
-            int current_id;
-            sscanf(line, "%d,", &current_id);
-            
-            if (current_id == pcb->process_id) {
-                // Actualizar el registro existente con formato más legible
-                fprintf(temp, "============= PCB Colmena %d =============\n", pcb->process_id);
-                fprintf(temp, "ID Proceso: %d\n", pcb->process_id);
-                fprintf(temp, "Tiempo de llegada: %ld\n", pcb->arrival_time);
-                fprintf(temp, "Iteraciones totales: %d\n", pcb->iterations);
-                fprintf(temp, "Progreso en pila de código: %d\n", pcb->code_stack_progress);
-                fprintf(temp, "Tiempo de espera en E/S: %d\n", pcb->io_wait_time);
-                fprintf(temp, "Promedio tiempo espera E/S: %.2f\n", pcb->avg_io_wait_time);
-                fprintf(temp, "Promedio tiempo espera Ready: %.2f\n", pcb->avg_ready_wait_time);
-                fprintf(temp, "Estado actual: %s\n", 
-                    pcb->state == READY ? "READY" :
-                    pcb->state == RUNNING ? "RUNNING" :
-                    pcb->state == WAITING ? "WAITING" : "TERMINATED");
-                fprintf(temp, "=========================================\n\n");
-                found = true;
-            } else {
-                // Copiar el registro existente sin cambios
-                fprintf(temp, "%s", line);
+            int id;
+            if (sscanf(line, "============= PCB Colmena %d =============", &id) == 1) {
+                if (id == pcb->process_id) {
+                    exists = true;
+                    break;
+                }
             }
         }
         fclose(file);
     }
     
-    // Si no se encontró el registro, añadir uno nuevo
-    if (!found) {
-        fprintf(temp, "============= PCB Colmena %d =============\n", pcb->process_id);
-        fprintf(temp, "ID Proceso: %d\n", pcb->process_id);
-        fprintf(temp, "Tiempo de llegada: %ld\n", pcb->arrival_time);
-        fprintf(temp, "Iteraciones totales: %d\n", pcb->iterations);
-        fprintf(temp, "Progreso en pila de código: %d\n", pcb->code_stack_progress);
-        fprintf(temp, "Tiempo de espera en E/S: %d\n", pcb->io_wait_time);
-        fprintf(temp, "Promedio tiempo espera E/S: %.2f\n", pcb->avg_io_wait_time);
-        fprintf(temp, "Promedio tiempo espera Ready: %.2f\n", pcb->avg_ready_wait_time);
-        fprintf(temp, "Estado actual: %s\n", 
-            pcb->state == READY ? "READY" :
-            pcb->state == RUNNING ? "RUNNING" :
-            pcb->state == WAITING ? "WAITING" : "TERMINATED");
-        fprintf(temp, "=========================================\n\n");
-    }
-    
-    fclose(temp);
-    
-    // Reemplazar el archivo original con el temporal
-    remove(PCB_FILE);
-    rename("data/pcb_temp.txt", PCB_FILE);
-    
-    // Asegurar que los datos se escriban inmediatamente
-    temp = fopen(PCB_FILE, "r+");
-    if (temp) {
-        fflush(temp);
-        fclose(temp);
+    if (!exists) {
+        // Si no existe, simplemente agregar al final
+        file = fopen(PCB_FILE, "a");
+        if (file) {
+            write_to_pcb_file(file, pcb);
+            fflush(file);
+            fclose(file);
+        }
+    } else {
+        // Si existe, crear archivo temporal y reescribir
+        FILE* temp = fopen("data/pcb_temp.txt", "w");
+        file = fopen(PCB_FILE, "r");
+        
+        if (temp && file) {
+            bool skipping = false;
+            while (fgets(line, sizeof(line), file)) {
+                int id;
+                if (sscanf(line, "============= PCB Colmena %d =============", &id) == 1) {
+                    if (id == pcb->process_id) {
+                        write_to_pcb_file(temp, pcb);
+                        skipping = true;
+                    } else {
+                        skipping = false;
+                    }
+                }
+                
+                if (!skipping) {
+                    fputs(line, temp);
+                }
+            }
+            
+            fclose(file);
+            fclose(temp);
+            
+            // Reemplazar el archivo original con el temporal
+            remove(PCB_FILE);
+            rename("data/pcb_temp.txt", PCB_FILE);
+        } else {
+            if (temp) fclose(temp);
+            if (file) fclose(file);
+        }
     }
 }
 
