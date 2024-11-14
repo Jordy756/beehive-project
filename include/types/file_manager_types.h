@@ -13,25 +13,29 @@
 typedef enum {
     READY,
     RUNNING,
-    WAITING,
-    TERMINATED
+    WAITING
 } ProcessState;
 
 typedef struct {
     int process_id;
     time_t arrival_time;
     int iterations;
-    int code_stack_progress;
-    int io_wait_time;
     double avg_io_wait_time;
     double avg_ready_wait_time;
     ProcessState state;
+    
+    // Variables de control para cálculos de promedios
+    int total_io_waits;
+    time_t last_ready_time;
+    time_t last_state_change;
+    double total_io_wait_time;
+    double total_ready_wait_time;
+    int current_io_wait_time;  // Movido aquí desde ProcessInfo
 } ProcessControlBlock;
 
 typedef struct {
     double avg_arrival_time;
     double avg_iterations;
-    double avg_code_progress;
     double avg_io_wait_time;
     double avg_ready_wait_time;
     int total_processes;

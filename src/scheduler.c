@@ -3,6 +3,7 @@
 #include <string.h>
 #include <unistd.h>
 #include "../include/core/scheduler.h"
+#include "../include/core/file_manager.h"
 #include "../include/core/utils.h"
 
 // Variables globales
@@ -169,6 +170,7 @@ bool check_and_handle_io(ProcessInfo* process) {
     if (random_range(1, 100) <= IO_PROBABILITY) {
         printf("\nProceso %d entrando a E/S\n", process->index);
         process->in_io = true;
+        update_pcb_state(&process->pcb, WAITING);  // Actualizar PCB al entrar a E/S
         add_to_io_queue(process);
         return true;
     }
@@ -181,12 +183,13 @@ void add_to_io_queue(ProcessInfo* process) {
     if (scheduler_state.io_queue->size < MAX_IO_QUEUE_SIZE) {
         IOQueueEntry* entry = &scheduler_state.io_queue->entries[scheduler_state.io_queue->size];
         entry->process = process;
-        entry->wait_time = random_range(MIN_IO_WAIT, MAX_IO_WAIT);
+        process->pcb.current_io_wait_time = random_range(MIN_IO_WAIT, MAX_IO_WAIT);  // Usar desde PCB
+        entry->wait_time = process->pcb.current_io_wait_time;
         entry->start_time = time(NULL);
         scheduler_state.io_queue->size++;
         
         printf("Proceso %d añadido a cola de E/S. Tiempo de espera: %d ms\n",
-               process->index, entry->wait_time);
+                process->index, entry->wait_time);
     }
     
     pthread_mutex_unlock(&scheduler_state.io_queue->mutex);
@@ -227,6 +230,7 @@ void return_to_ready_queue(ProcessInfo* process) {
     
     process->is_running = false;
     process->in_io = false;
+    update_pcb_state(&process->pcb, READY);  // Actualizar PCB al volver a cola de listos
     reset_process_timeslice(process);
     
     if (scheduler_state.current_policy == SHORTEST_JOB_FIRST) {
@@ -270,6 +274,7 @@ void* io_manager_thread(void* arg) {
 
 void preempt_current_process(void) {
     if (scheduler_state.active_process != NULL) {
+        update_pcb_state(&scheduler_state.active_process->pcb, READY);  // Actualizar PCB al ser interrumpido
         suspend_process(scheduler_state.active_process);
         scheduler_state.active_process = NULL;
     }
@@ -278,7 +283,7 @@ void preempt_current_process(void) {
 void suspend_process(ProcessInfo* process) {
     if (process != NULL) {
         process->is_running = false;
-        sem_post(process->shared_resource_sem);
+        update_pcb_state(&process->pcb, READY);
     }
 }
 
@@ -286,6 +291,7 @@ void resume_process(ProcessInfo* process) {
     if (process != NULL) {
         process->is_running = true;
         process->last_quantum_start = time(NULL);
+        update_pcb_state(&process->pcb, RUNNING);
         reset_process_timeslice(process);
     }
 }
@@ -375,6 +381,21 @@ void update_job_queue(Beehive** beehives, int total_beehives) {
             process->remaining_time_slice = PROCESS_TIME_SLICE;
             process->preempted = false;
             process->preemption_time = 0;
+            
+            // Solo inicializar el PCB si es un proceso nuevo
+            bool process_exists = false;
+            for (int j = 0; j < job_queue_size; j++) {
+                if (job_queue[j].pcb.process_id == i) {
+                    process_exists = true;
+                    process->pcb = job_queue[j].pcb;
+                    break;
+                }
+            }
+            
+            if (!process_exists) {
+                init_pcb(&process->pcb, i);
+            }
+            
             init_process_semaphores(process);
             update_process_resources(process);
             update_process_priority(process);
@@ -399,21 +420,19 @@ void schedule_process(ProcessControlBlock* pcb) {
     time_t current_time = time(NULL);
     
     if (scheduler_state.current_policy == SHORTEST_JOB_FIRST) {
-        // Para FSJ, permitir que el proceso actual ejecute por un tiempo mínimo
         if (scheduler_state.active_process != NULL) {
             double elapsed = difftime(current_time, scheduler_state.active_process->last_quantum_start);
-            if (elapsed < 1.0) { // Dar al menos 1 segundo de ejecución
+            if (elapsed < 1.0) {
                 sem_post(&scheduler_state.scheduler_sem);
                 return;
             }
         }
         
-        // Verificar preemption cada 2 segundos para evitar sobrecarga
         if (difftime(current_time, last_preemption_check) >= 2.0) {
             for (int i = 0; i < job_queue_size; i++) {
                 if (!job_queue[i].is_running && !job_queue[i].in_io) {
                     update_process_resources(&job_queue[i]);
-                    if (scheduler_state.active_process == NULL || 
+                    if (scheduler_state.active_process == NULL ||
                         should_preempt_fsj(&job_queue[i], scheduler_state.active_process)) {
                         next_process = &job_queue[i];
                         break;
@@ -423,7 +442,6 @@ void schedule_process(ProcessControlBlock* pcb) {
             last_preemption_check = current_time;
         }
     } else {
-        // Lógica existente para Round Robin
         for (int i = 0; i < job_queue_size; i++) {
             if (!job_queue[i].is_running && !job_queue[i].in_io) {
                 next_process = &job_queue[i];
@@ -434,11 +452,10 @@ void schedule_process(ProcessControlBlock* pcb) {
     
     if (next_process != NULL) {
         if (scheduler_state.active_process != NULL) {
-            // Solo preempt si realmente es necesario
             if (scheduler_state.current_policy == SHORTEST_JOB_FIRST) {
                 update_process_resources(scheduler_state.active_process);
                 update_process_resources(next_process);
-                if (next_process->resources.total_resources >= 
+                if (next_process->resources.total_resources >=
                     scheduler_state.active_process->resources.total_resources) {
                     sem_post(&scheduler_state.scheduler_sem);
                     return;
@@ -450,9 +467,8 @@ void schedule_process(ProcessControlBlock* pcb) {
         scheduler_state.active_process = next_process;
         resume_process(next_process);
         
-        // Actualizar PCB
-        pcb->process_id = next_process->index;
-        pcb->iterations++;
+        // Copiar información del PCB del proceso para actualización
+        *pcb = next_process->pcb;
     }
     
     sem_post(&scheduler_state.scheduler_sem);

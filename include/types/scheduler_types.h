@@ -40,10 +40,11 @@ typedef struct {
     int remaining_time_slice;
     bool is_running;
     int priority;
-    bool in_io;                // Para E/S
-    ProcessResources resources; // Nuevo: tracking de recursos
-    bool preempted;            // Nuevo: indica si fue interrumpido
-    time_t preemption_time;    // Nuevo: cuando fue interrumpido
+    bool in_io;
+    ProcessResources resources;
+    bool preempted;
+    time_t preemption_time;
+    ProcessControlBlock pcb;
 } ProcessInfo;
 
 // Nueva estructura para entrada en cola de E/S

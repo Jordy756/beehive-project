@@ -10,6 +10,8 @@ void init_file_manager(void);
 // Funciones para PCB
 void write_to_pcb_file(FILE* file, ProcessControlBlock* pcb);
 void save_pcb(ProcessControlBlock* pcb);
+void init_pcb(ProcessControlBlock* pcb, int process_id);
+void update_pcb_state(ProcessControlBlock* pcb, ProcessState new_state);
 
 // Funciones para tabla de procesos
 void save_process_table(ProcessTable* table);

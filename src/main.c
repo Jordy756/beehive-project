@@ -18,8 +18,8 @@
 volatile sig_atomic_t running = 1;
 Beehive* beehives[MAX_BEEHIVES];
 int total_beehives = 0;
+ProcessControlBlock pcb;  // Modificación: Movido a variable global para mejor gestión
 
-// Función para manejar señales (Ctrl+C)
 void handle_signal(int sig) {
     (void)sig;
     printf("\nRecibida señal de terminación (Ctrl+C). Finalizando el programa...\n");
@@ -59,22 +59,27 @@ void cleanup_all_beehives() {
 }
 
 void print_process_resources() {
-    printf("\n=== Recursos de Procesos ===\n");
-    for (int i = 0; i < job_queue_size; i++) {
-        ProcessInfo* process = &job_queue[i];
-        update_process_resources(process);
-        printf("Proceso %d (Colmena %d):\n", i, process->index);
-        printf("  - Abejas: %d\n", process->resources.bee_count);
-        printf("  - Miel: %d\n", process->resources.honey_count);
-        printf("  - Total recursos: %d\n", process->resources.total_resources);
-        printf("  - Estado: %s\n", 
-               process->is_running ? "En ejecución" : 
-               process->in_io ? "En E/S" : "Listo");
-        if (process->preempted) {
-            printf("  - Interrumpido en: %s", ctime(&process->preemption_time));
-        }
-    }
-    printf("===========================\n");
+    printf("\n=== Nada ===\n");
+    // printf("\n=== Recursos de Procesos ===\n");
+    // for (int i = 0; i < job_queue_size; i++) {
+    //     ProcessInfo* process = &job_queue[i];
+    //     update_process_resources(process);
+    //     printf("Proceso %d (Colmena %d):\n", i, process->index);
+    //     printf("  - Abejas: %d\n", process->resources.bee_count);
+    //     printf("  - Miel: %d\n", process->resources.honey_count);
+    //     printf("  - Total recursos: %d\n", process->resources.total_resources);
+    //     printf("  - Estado: %s\n",
+    //             process->is_running ? "En ejecución" :
+    //             process->in_io ? "En E/S" : "Listo");
+    //     if (process->preempted) {
+    //         printf("  - Interrumpido en: %s", ctime(&process->preemption_time));
+    //     }
+    //     // Agregar información del PCB
+    //     printf("  - Iteraciones: %d\n", process->pcb.iterations);
+    //     printf("  - Promedio espera E/S: %.2f segundos\n", process->pcb.avg_io_wait_time);
+    //     printf("  - Promedio espera Ready: %.2f segundos\n", process->pcb.avg_ready_wait_time);
+    // }
+    // printf("===========================\n");
 }
 
 void print_io_stats() {
@@ -88,9 +93,9 @@ void print_io_stats() {
             time_t current_time = time(NULL);
             double elapsed_ms = difftime(current_time, entry->start_time) * 1000;
             printf("- Proceso %d: Tiempo restante: %.0f/%d ms\n",
-                   entry->process->index,
-                   (double)entry->wait_time - elapsed_ms,
-                   entry->wait_time);
+                    entry->process->index,
+                    (double)entry->wait_time - elapsed_ms,
+                    entry->wait_time);
         }
     }
     pthread_mutex_unlock(&scheduler_state.io_queue->mutex);
@@ -100,16 +105,16 @@ void print_io_stats() {
 void print_scheduling_info() {
     printf("\n=== Estado del Planificador ===\n");
     printf("Política actual: %s\n",
-           scheduler_state.current_policy == ROUND_ROBIN ? "Round Robin" : "Shortest Job First (FSJ)");
+            scheduler_state.current_policy == ROUND_ROBIN ? "Round Robin" : "Shortest Job First (FSJ)");
     
     if (scheduler_state.current_policy == ROUND_ROBIN) {
         printf("Quantum actual: %d\n", scheduler_state.current_quantum);
         printf("Contador de quantum: %d/%d\n",
-               scheduler_state.quantum_counter, QUANTUM_UPDATE_INTERVAL);
+                scheduler_state.quantum_counter, QUANTUM_UPDATE_INTERVAL);
     }
     
     printf("Contador para cambio de política: %d/%d\n",
-           scheduler_state.policy_switch_counter, POLICY_SWITCH_THRESHOLD);
+            scheduler_state.policy_switch_counter, POLICY_SWITCH_THRESHOLD);
     printf("Procesos en cola: %d\n", job_queue_size);
     
     // Mostrar proceso activo
@@ -119,6 +124,7 @@ void print_scheduling_info() {
         printf("  - Abejas: %d\n", scheduler_state.active_process->resources.bee_count);
         printf("  - Miel: %d\n", scheduler_state.active_process->resources.honey_count);
         printf("  - Total: %d\n", scheduler_state.active_process->resources.total_resources);
+        printf("  - Iteraciones: %d\n", scheduler_state.active_process->pcb.iterations);
     }
     
     // Mostrar recursos de todos los procesos
@@ -155,17 +161,8 @@ int main() {
     init_beehive(beehives[0], 0);
     total_beehives = 1;
 
-    // Inicializar PCB
-    ProcessControlBlock pcb = {
-        .process_id = 0,
-        .arrival_time = time(NULL),
-        .iterations = 0,
-        .code_stack_progress = 0,
-        .io_wait_time = 0,
-        .avg_io_wait_time = 0,
-        .avg_ready_wait_time = 0,
-        .state = READY
-    };
+    // Inicializar PCB inicial
+    // init_pcb(&pcb, 0);  // Inicializar PCB con el id del primer proceso
 
     printf("\n=== Simulación de Colmenas Iniciada ===\n");
     printf("- Cada colmena tiene %d cámaras\n", NUM_CHAMBERS);
@@ -180,7 +177,7 @@ int main() {
         update_job_queue(beehives, total_beehives);
 
         // Verificar preemption en FSJ si hay proceso activo
-        if (scheduler_state.current_policy == SHORTEST_JOB_FIRST && 
+        if (scheduler_state.current_policy == SHORTEST_JOB_FIRST &&
             scheduler_state.active_process != NULL) {
             handle_fsj_preemption();
         }
@@ -200,17 +197,15 @@ int main() {
             Beehive* current_hive = beehives[current_index];
 
             if (current_hive != NULL && !current_hive->should_terminate) {
-                // Proteger acceso a recursos compartidos
                 sem_wait(job_queue[i].shared_resource_sem);
                 
-                pcb.process_id = current_index;
-
-                // Actualizar PCB y archivos
+                // Actualizar PCB y archivos usando el PCB del proceso actual
                 save_beehive_history(current_hive);
-                save_pcb(&pcb);
+                save_pcb(&job_queue[i].pcb);
                 
-                // Programar proceso y verificar preemption
-                schedule_process(&pcb);
+                // Programar proceso usando su propio PCB
+                schedule_process(&job_queue[i].pcb);
+                
                 if (scheduler_state.current_policy == SHORTEST_JOB_FIRST) {
                     check_fsj_preemption(&job_queue[i]);
                 }
@@ -236,7 +231,7 @@ int main() {
                         printf("\n=== ¡Nueva Colmena Creada! ===\n");
                         printf("- ID de la nueva colmena: %d\n", new_index);
                         printf("- Total de colmenas activas: %d/%d\n\n",
-                               total_beehives, MAX_BEEHIVES);
+                                total_beehives, MAX_BEEHIVES);
                     }
                 }
 
@@ -245,8 +240,9 @@ int main() {
         }
 
         // Actualizar tabla de procesos
-        save_pcb(&pcb);
-        update_process_table(&pcb);
+        if (scheduler_state.active_process != NULL) {
+            update_process_table(&scheduler_state.active_process->pcb);
+        }
 
         if (!running) {
             printf("\nIniciando proceso de terminación...\n");
