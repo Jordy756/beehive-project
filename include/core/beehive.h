@@ -10,8 +10,8 @@ void print_beehive_stats(Beehive* hive);
 bool check_new_queen(Beehive* hive);
 void print_chamber_matrix(Beehive* hive);
 
-// Nueva función para imprimir una cámara específica
-void print_single_chamber(Chamber* chamber, int chamber_index);
+// Nueva función para imprimir una fila de cámaras
+void print_chamber_row(Beehive* hive, int start_index, int end_index);
 
 // Función principal del hilo de la colmena
 void* hive_main_thread(void* arg);

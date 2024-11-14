@@ -368,32 +368,50 @@ bool check_new_queen(Beehive* hive) {
     return needs_new_hive;
 }
 
-void print_single_chamber(Chamber* chamber, int chamber_index) {
-    printf("\nCámara #%d:\n", chamber_index);
-    
+void print_chamber_row(Beehive* hive, int start_index, int end_index) {
+    // Imprimir primero la línea de números de cámara
+    for (int c = start_index; c < end_index; c++) {
+        printf("Cámara #%d:", c);
+        printf("\t\t\t\t\t");  // Tabulación entre cámaras
+    }
+    printf("\n");
+
+    // Imprimir las matrices de las cámaras fila por fila
     for (int i = 0; i < MAX_CHAMBER_SIZE; i++) {
-        for (int j = 0; j < MAX_CHAMBER_SIZE; j++) {
-            Cell* cell = &chamber->cells[i][j];
-            if (is_egg_position(i, j)) {
-                // Posición para huevos
-                printf("H%d  ", cell->has_egg ? 1 : 0);
-            } else {
-                // Posición para miel
-                printf("M%d  ", cell->has_honey ? 1 : 0);
+        for (int c = start_index; c < end_index; c++) {
+            Chamber* chamber = &hive->chambers[c];
+            // Imprimir una fila de la cámara actual
+            for (int j = 0; j < MAX_CHAMBER_SIZE; j++) {
+                Cell* cell = &chamber->cells[i][j];
+                if (is_egg_position(i, j)) {
+                    printf("H%d  ", cell->has_egg ? 1 : 0);
+                } else {
+                    printf("M%d  ", cell->has_honey ? 1 : 0);
+                }
             }
+            printf("\t");  // Separación entre cámaras
         }
         printf("\n");
     }
-    printf("Miel en cámara: %d/%d\n", chamber->honey_count, MAX_HONEY_PER_CHAMBER);
-    printf("Huevos en cámara: %d/%d\n", chamber->egg_count, MAX_EGGS_PER_CHAMBER);
+
+    // Imprimir estadísticas de cada cámara
+    for (int c = start_index; c < end_index; c++) {
+        Chamber* chamber = &hive->chambers[c];
+        printf("Miel: %d/%d, Huevos: %d/%d\t\t\t", 
+            chamber->honey_count, MAX_HONEY_PER_CHAMBER,
+            chamber->egg_count, MAX_EGGS_PER_CHAMBER);
+    }
+    printf("\n\n");  // Doble salto de línea entre filas de cámaras
 }
 
 void print_chamber_matrix(Beehive* hive) {
-    printf("\nColmena #%d - Estado de las cámaras:\n", hive->id);
+    printf("\nColmena #%d - Estado de las cámaras:\n\n", hive->id);
     
-    for (int i = 0; i < NUM_CHAMBERS; i++) {
-        print_single_chamber(&hive->chambers[i], i);
-    }
+    // Imprimir primera fila de cámaras (0-4)
+    print_chamber_row(hive, 0, 5);
+    
+    // Imprimir segunda fila de cámaras (5-9)
+    print_chamber_row(hive, 5, 10);
 }
 
 void print_beehive_stats(Beehive* hive) {
@@ -418,16 +436,9 @@ void print_beehive_stats(Beehive* hive) {
     hive->bee_count = alive_count;
     
     printf("Total de abejas: %d\n", hive->bee_count);
-    printf("Abejas vivas: %d (Reina: %d, Obreras: %d)\n", alive_count, queen_count, worker_count);
+    printf("- Reina: %d\n- Obreras: %d\n", queen_count, worker_count);
     printf("Total de miel: %d/%d\n", hive->honey_count, MAX_HONEY_PER_HIVE);
     printf("Total de huevos: %d/%d\n", hive->egg_count, MAX_EGGS_PER_HIVE);
-    
-    // Mostrar recursos por cámara
-    for (int c = 0; c < NUM_CHAMBERS; c++) {
-        Chamber* chamber = &hive->chambers[c];
-        printf("Cámara %d - Miel: %d, Huevos: %d/%d\n",
-               c, chamber->honey_count, chamber->egg_count, MAX_EGGS_PER_CHAMBER);
-    }
     
     print_chamber_matrix(hive);
     delay_ms(2000);
