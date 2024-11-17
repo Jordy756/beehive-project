@@ -1,14 +1,15 @@
 #include "../include/core/file_manager.h"
+#include "../include/core/utils.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
 #include <json-c/json.h>
 #include <pthread.h>
-#include <unistd.h>     // Para access()
-#include <sys/stat.h>   // Para mkdir() y struct stat
-#include <sys/types.h>  // Tipos adicionales necesarios
-#include <errno.h>      // Para manejo de errores
+#include <unistd.h>     
+#include <sys/stat.h>   
+#include <sys/types.h>  
+#include <errno.h>      
 
 // Initialize mutex for thread-safe file operations
 pthread_mutex_t pcb_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -18,89 +19,103 @@ pthread_mutex_t history_mutex = PTHREAD_MUTEX_INITIALIZER;
 // Private functions declarations
 static const char* process_state_to_string(ProcessState state);
 static ProcessState string_to_process_state(const char* state_str);
-static json_object* read_json_file(const char* filename);
-static void write_json_file(const char* filename, json_object* json);
-static void ensure_directory_exists(void);
-static char* get_formatted_time(time_t t);
 static json_object* pcb_to_json(ProcessControlBlock* pcb);
-static json_object* beehive_history_to_json(BeehiveHistory* history);
+static json_object* beehive_history_to_json(Beehive* hive);
 
 // Private function implementations
-static void ensure_directory_exists(void) {
-    struct stat st = {0};
-    if (stat("data", &st) == -1) {
-        #ifdef _WIN32
-            mkdir("data");
-        #else
-            mkdir("data", 0700);
-        #endif
-    }
-}
-
-static json_object* read_json_file(const char* filename) {
-    json_object* root = json_object_from_file(filename);
-    if (!root) {
-        root = json_object_new_array();
-    } else if (!json_object_is_type(root, json_type_array)) {
-        json_object_put(root);
-        root = json_object_new_array();
-    }
-    return root;
-}
-
-static void write_json_file(const char* filename, json_object* json) {
-    if (!filename || !json) return;
-    
-    FILE* fp = fopen(filename, "w");
-    if (fp) {
-        fputs(json_object_to_json_string_ext(json, JSON_C_TO_STRING_PRETTY), fp);
-        fclose(fp);
-    }
-}
-
 static const char* process_state_to_string(ProcessState state) {
     switch (state) {
         case RUNNING:
-            return "En ejecución";
+            return "running";
         case READY:
-            return "Listo";
+            return "ready";
         case WAITING:
-            return "Espera E/S";
+            return "waiting";
         default:
-            return "Desconocido";
+            return "unknown";
     }
 }
 
 static ProcessState string_to_process_state(const char* state_str) {
-    if (strcmp(state_str, "En ejecución") == 0) return RUNNING;
-    if (strcmp(state_str, "Listo") == 0) return READY;
-    if (strcmp(state_str, "Espera E/S") == 0) return WAITING;
+    if (strcmp(state_str, "running") == 0) return RUNNING;
+    if (strcmp(state_str, "ready") == 0) return READY;
+    if (strcmp(state_str, "waiting") == 0) return WAITING;
     return READY; // Default state
 }
 
-static char* get_formatted_time(time_t t) {
-    static char buffer[26];
-    struct tm* tm_info = localtime(&t);
-    strftime(buffer, 26, "%Y-%m-%d %H:%M:%S", tm_info);
-    return buffer;
+static json_object* pcb_to_json(ProcessControlBlock* pcb) {
+    json_object* obj = json_object_new_object();
+    
+    json_object_object_add(obj, "process_id", json_object_new_int(pcb->process_id));
+    json_object_object_add(obj, "arrival_time", json_object_new_string(format_time(pcb->arrival_time)));
+    json_object_object_add(obj, "iterations", json_object_new_int(pcb->iterations));
+    json_object_object_add(obj, "avg_io_wait_time", json_object_new_double(pcb->avg_io_wait_time));
+    json_object_object_add(obj, "avg_ready_wait_time", json_object_new_double(pcb->avg_ready_wait_time));
+    json_object_object_add(obj, "state", json_object_new_string(process_state_to_string(pcb->state)));
+    json_object_object_add(obj, "total_io_waits", json_object_new_int(pcb->total_io_waits));
+    json_object_object_add(obj, "total_io_wait_time", json_object_new_double(pcb->total_io_wait_time));
+    json_object_object_add(obj, "total_ready_wait_time", json_object_new_double(pcb->total_ready_wait_time));
+    
+    return obj;
 }
 
-void init_file_manager(void) {
-    ensure_directory_exists();
+static json_object* beehive_history_to_json(Beehive* hive) {
+    if (!hive) return NULL;
     
-    if (access(PCB_FILE, F_OK) != 0) {
+    json_object* obj = json_object_new_object();
+    
+    // Timestamp y ID
+    json_object_object_add(obj, "timestamp", json_object_new_string(format_time(time(NULL))));
+    json_object_object_add(obj, "beehive_id", json_object_new_int(hive->id));
+    
+    // Huevos
+    json_object* eggs = json_object_new_object();
+    json_object_object_add(eggs, "current", json_object_new_int(hive->egg_count));
+    json_object_object_add(eggs, "hatched", json_object_new_int(hive->hatched_eggs));
+    json_object_object_add(eggs, "laid", json_object_new_int(hive->egg_count + hive->hatched_eggs));
+    json_object_object_add(obj, "eggs", eggs);
+    
+    // Abejas
+    json_object* bees = json_object_new_object();
+    json_object_object_add(bees, "dead", json_object_new_int(hive->dead_bees));
+    json_object_object_add(bees, "born", json_object_new_int(hive->born_bees));
+    json_object_object_add(bees, "current", json_object_new_int(hive->bee_count));
+    json_object_object_add(obj, "bees", bees);
+    
+    // Polen
+    json_object* polen = json_object_new_object();
+    json_object_object_add(polen, "total_collected", json_object_new_int(hive->threads.resources.total_polen_collected));
+    json_object_object_add(polen, "available", json_object_new_int(hive->threads.resources.polen_for_honey));
+    json_object_object_add(obj, "polen", polen);
+    
+    // Miel
+    json_object* honey = json_object_new_object();
+    json_object_object_add(honey, "produced", json_object_new_int(hive->produced_honey));
+    json_object_object_add(honey, "total", json_object_new_int(hive->honey_count));
+    json_object_object_add(obj, "honey", honey);
+    
+    return obj;
+}
+
+// Public functions implementations
+void init_file_manager(void) {
+    if (!directory_exists("data")) {
+        create_directory("data");
+    }
+    
+    if (!file_exists(PCB_FILE)) {
         json_object* array = json_object_new_array();
         write_json_file(PCB_FILE, array);
         json_object_put(array);
     }
     
-    if (access(PROCESS_TABLE_FILE, F_OK) != 0) {
+    if (!file_exists(PROCESS_TABLE_FILE)) {
         json_object* obj = json_object_new_object();
         write_json_file(PROCESS_TABLE_FILE, obj);
         json_object_put(obj);
     }
     
-    if (access(BEEHIVE_HISTORY_FILE, F_OK) != 0) {
+    if (!file_exists(BEEHIVE_HISTORY_FILE)) {
         json_object* array = json_object_new_array();
         write_json_file(BEEHIVE_HISTORY_FILE, array);
         json_object_put(array);
@@ -144,6 +159,7 @@ void update_pcb_state(ProcessControlBlock* pcb, ProcessState new_state) {
                 pcb->avg_io_wait_time = pcb->total_io_wait_time / pcb->total_io_waits;
             }
             break;
+
         case RUNNING:
             break;
     }
@@ -160,9 +176,7 @@ void update_pcb_state(ProcessControlBlock* pcb, ProcessState new_state) {
 void save_pcb(ProcessControlBlock* pcb) {
     pthread_mutex_lock(&pcb_mutex);
     
-    json_object* array = read_json_file(PCB_FILE);
-    
-    // Create new PCB entry
+    json_object* array = read_json_array_file(PCB_FILE);
     json_object* pcb_obj = pcb_to_json(pcb);
 
     // Check if process already exists and update if it does
@@ -196,7 +210,7 @@ ProcessTable* load_process_table(void) {
     ProcessTable* table = malloc(sizeof(ProcessTable));
     memset(table, 0, sizeof(ProcessTable));
     
-    json_object* root = read_json_file(PROCESS_TABLE_FILE);
+    json_object* root = read_json_array_file(PROCESS_TABLE_FILE);
     
     json_object* temp;
     if (json_object_object_get_ex(root, "avg_arrival_time", &temp))
@@ -242,7 +256,6 @@ void save_process_table(ProcessTable* table) {
 void update_process_table(ProcessControlBlock* pcb) {
     ProcessTable* table = load_process_table();
     
-    // Calcular nuevos promedios
     double old_weight = (double)(table->total_processes) / (table->total_processes + 1);
     double new_weight = 1.0 / (table->total_processes + 1);
     
@@ -257,7 +270,6 @@ void update_process_table(ProcessControlBlock* pcb) {
     
     table->total_processes++;
     
-    // Actualizar contadores de procesos por estado
     if (pcb->state == READY) table->ready_processes++;
     else if (pcb->state == WAITING) table->io_waiting_processes++;
     
@@ -270,65 +282,11 @@ void save_beehive_history(Beehive* hive) {
 
     pthread_mutex_lock(&history_mutex);
     
-    // Leer el historial existente o crear uno nuevo
-    json_object* array = read_json_file(BEEHIVE_HISTORY_FILE);
-    
-    // Añadir nueva entrada al array de históricos
+    json_object* array = read_json_array_file(BEEHIVE_HISTORY_FILE);
     json_object_array_add(array, beehive_history_to_json(hive));
     
     write_json_file(BEEHIVE_HISTORY_FILE, array);
     json_object_put(array);
     
     pthread_mutex_unlock(&history_mutex);
-}
-
-static json_object* beehive_history_to_json(BeehiveHistory* history) {
-    json_object* obj = json_object_new_object();
-    
-    json_object_object_add(obj, "timestamp", json_object_new_int64(history->timestamp));
-    json_object_object_add(obj, "beehive_id", json_object_new_int(history->beehive_id));
-    
-    // Huevos
-    json_object* eggs = json_object_new_object();
-    json_object_object_add(eggs, "current", json_object_new_int(history->current_eggs));
-    json_object_object_add(eggs, "hatched", json_object_new_int(history->hatched_eggs));
-    json_object_object_add(eggs, "laid", json_object_new_int(history->laid_eggs));
-    json_object_object_add(obj, "eggs", eggs);
-    
-    // Abejas
-    json_object* bees = json_object_new_object();
-    json_object_object_add(bees, "dead", json_object_new_int(history->dead_bees));
-    json_object_object_add(bees, "born", json_object_new_int(history->born_bees));
-    json_object_object_add(bees, "current", json_object_new_int(history->current_bees));
-    json_object_object_add(obj, "bees", bees);
-    
-    // Polen
-    json_object* polen = json_object_new_object();
-    json_object_object_add(polen, "total_collected", json_object_new_int(history->total_polen_collected));
-    json_object_object_add(polen, "available", json_object_new_int(history->polen_for_honey));
-    json_object_object_add(obj, "polen", polen);
-    
-    // Miel
-    json_object* honey = json_object_new_object();
-    json_object_object_add(honey, "produced", json_object_new_int(history->produced_honey));
-    json_object_object_add(honey, "total", json_object_new_int(history->total_honey));
-    json_object_object_add(obj, "honey", honey);
-    
-    return obj;
-}
-
-static json_object* pcb_to_json(ProcessControlBlock* pcb) {
-    json_object* obj = json_object_new_object();
-    
-    json_object_object_add(obj, "process_id", json_object_new_int(pcb->process_id));
-    json_object_object_add(obj, "arrival_time", json_object_new_int64(pcb->arrival_time));
-    json_object_object_add(obj, "iterations", json_object_new_int(pcb->iterations));
-    json_object_object_add(obj, "avg_io_wait_time", json_object_new_double(pcb->avg_io_wait_time));
-    json_object_object_add(obj, "avg_ready_wait_time", json_object_new_double(pcb->avg_ready_wait_time));
-    json_object_object_add(obj, "state", json_object_new_string(process_state_to_string(pcb->state)));
-    json_object_object_add(obj, "total_io_waits", json_object_new_int(pcb->total_io_waits));
-    json_object_object_add(obj, "total_io_wait_time", json_object_new_double(pcb->total_io_wait_time));
-    json_object_object_add(obj, "total_ready_wait_time", json_object_new_double(pcb->total_ready_wait_time));
-    
-    return obj;
 }

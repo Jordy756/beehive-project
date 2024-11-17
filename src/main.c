@@ -198,10 +198,8 @@ int main() {
 
             if (current_hive != NULL && !current_hive->should_terminate) {
                 sem_wait(job_queue[i].shared_resource_sem);
-                // print_beehive_stats(current_hive);
                 
                 // Actualizar PCB y archivos usando el PCB del proceso actual
-                save_beehive_history(current_hive);
                 save_pcb(&job_queue[i].pcb);
                 
                 // Programar proceso usando su propio PCB
@@ -229,12 +227,11 @@ int main() {
 
                         printf("\n=== ¡Nueva Colmena Creada! ===\n");
                         printf("- ID de la nueva colmena: %d\n", new_index);
-                        printf("- Total de colmenas activas: %d/%d\n\n",
-                                total_beehives, MAX_BEEHIVES);
+                        printf("- Total de colmenas activas: %d/%d\n\n", total_beehives, MAX_BEEHIVES);
                     }
                 }
 
-                print_beehive_stats(current_hive);
+                
 
                 sem_post(job_queue[i].shared_resource_sem);
             }
@@ -251,7 +248,7 @@ int main() {
         }
 
         // Pequeña pausa para no saturar el CPU
-        delay_ms(100);
+        delay_ms(2000);
     }
 
     printf("\nEsperando a que todas las colmenas terminen...\n");
