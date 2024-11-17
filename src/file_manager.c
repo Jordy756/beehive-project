@@ -18,7 +18,6 @@ pthread_mutex_t history_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 // Private functions declarations
 static const char* process_state_to_string(ProcessState state);
-static ProcessState string_to_process_state(const char* state_str);
 static json_object* pcb_to_json(ProcessControlBlock* pcb);
 static json_object* beehive_history_to_json(Beehive* hive);
 
@@ -34,13 +33,6 @@ static const char* process_state_to_string(ProcessState state) {
         default:
             return "unknown";
     }
-}
-
-static ProcessState string_to_process_state(const char* state_str) {
-    if (strcmp(state_str, "running") == 0) return RUNNING;
-    if (strcmp(state_str, "ready") == 0) return READY;
-    if (strcmp(state_str, "waiting") == 0) return WAITING;
-    return READY; // Default state
 }
 
 static json_object* pcb_to_json(ProcessControlBlock* pcb) {
