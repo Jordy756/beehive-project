@@ -318,21 +318,21 @@ void manage_bee_lifecycle(Beehive* hive) {
 
 void* hive_main_thread(void* arg) {
     Beehive* hive = (Beehive*)arg;
-    
     while (hive->threads.thread_running && !hive->should_terminate) {
-        // Gestionar la producción de miel
-        manage_honey_production(hive);
+        // Esperar a que el proceso esté en ejecución
+        sem_wait(&hive->resource_sem);
         
-        // Gestionar la recolección de polen
-        manage_polen_collection(hive);
+        if (hive->state == RUNNING) {
+            manage_honey_production(hive);
+            manage_polen_collection(hive);
+            manage_bee_lifecycle(hive);
+        }
         
-        // Gestionar el ciclo de vida de las abejas
-        manage_bee_lifecycle(hive);
+        sem_post(&hive->resource_sem);
         
-        // Pequeña pausa entre ciclos
-        delay_ms(2000);
+        // Pequeña pausa para no saturar CPU
+        delay_ms(100);
     }
-    
     return NULL;
 }
 

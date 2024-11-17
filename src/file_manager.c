@@ -1,15 +1,115 @@
+#include "../include/core/file_manager.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "../include/core/file_manager.h"
+#include <time.h>
+#include <json-c/json.h>
+#include <pthread.h>
+#include <unistd.h>     // Para access()
+#include <sys/stat.h>   // Para mkdir() y struct stat
+#include <sys/types.h>  // Tipos adicionales necesarios
+#include <errno.h>      // Para manejo de errores
+
+// Initialize mutex for thread-safe file operations
+pthread_mutex_t pcb_mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t process_table_mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t history_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+// Private functions declarations
+static const char* process_state_to_string(ProcessState state);
+static ProcessState string_to_process_state(const char* state_str);
+static json_object* read_json_file(const char* filename);
+static void write_json_file(const char* filename, json_object* json);
+static void ensure_directory_exists(void);
+static char* get_formatted_time(time_t t);
+static json_object* pcb_to_json(ProcessControlBlock* pcb);
+static json_object* beehive_history_to_json(BeehiveHistory* history);
+
+// Private function implementations
+static void ensure_directory_exists(void) {
+    struct stat st = {0};
+    if (stat("data", &st) == -1) {
+        #ifdef _WIN32
+            mkdir("data");
+        #else
+            mkdir("data", 0700);
+        #endif
+    }
+}
+
+static json_object* read_json_file(const char* filename) {
+    json_object* root = json_object_from_file(filename);
+    if (!root) {
+        root = json_object_new_array();
+    } else if (!json_object_is_type(root, json_type_array)) {
+        json_object_put(root);
+        root = json_object_new_array();
+    }
+    return root;
+}
+
+static void write_json_file(const char* filename, json_object* json) {
+    if (!filename || !json) return;
+    
+    FILE* fp = fopen(filename, "w");
+    if (fp) {
+        fputs(json_object_to_json_string_ext(json, JSON_C_TO_STRING_PRETTY), fp);
+        fclose(fp);
+    }
+}
+
+static const char* process_state_to_string(ProcessState state) {
+    switch (state) {
+        case RUNNING:
+            return "En ejecución";
+        case READY:
+            return "Listo";
+        case WAITING:
+            return "Espera E/S";
+        default:
+            return "Desconocido";
+    }
+}
+
+static ProcessState string_to_process_state(const char* state_str) {
+    if (strcmp(state_str, "En ejecución") == 0) return RUNNING;
+    if (strcmp(state_str, "Listo") == 0) return READY;
+    if (strcmp(state_str, "Espera E/S") == 0) return WAITING;
+    return READY; // Default state
+}
+
+static char* get_formatted_time(time_t t) {
+    static char buffer[26];
+    struct tm* tm_info = localtime(&t);
+    strftime(buffer, 26, "%Y-%m-%d %H:%M:%S", tm_info);
+    return buffer;
+}
 
 void init_file_manager(void) {
-    system("mkdir -p data");
+    ensure_directory_exists();
+    
+    if (access(PCB_FILE, F_OK) != 0) {
+        json_object* array = json_object_new_array();
+        write_json_file(PCB_FILE, array);
+        json_object_put(array);
+    }
+    
+    if (access(PROCESS_TABLE_FILE, F_OK) != 0) {
+        json_object* obj = json_object_new_object();
+        write_json_file(PROCESS_TABLE_FILE, obj);
+        json_object_put(obj);
+    }
+    
+    if (access(BEEHIVE_HISTORY_FILE, F_OK) != 0) {
+        json_object* array = json_object_new_array();
+        write_json_file(BEEHIVE_HISTORY_FILE, array);
+        json_object_put(array);
+    }
 }
 
 void init_pcb(ProcessControlBlock* pcb, int process_id) {
     pcb->process_id = process_id;
-    pcb->arrival_time = time(NULL);  // Solo se establece UNA VEZ al crear el PCB
+    pcb->arrival_time = time(NULL);
     pcb->iterations = 0;
     pcb->avg_io_wait_time = 0.0;
     pcb->avg_ready_wait_time = 0.0;
@@ -27,15 +127,6 @@ void update_pcb_state(ProcessControlBlock* pcb, ProcessState new_state) {
     time_t current_time = time(NULL);
     double elapsed_time = difftime(current_time, pcb->last_state_change);
 
-    // Imprimir el estado actual del proceso.
-    printf("\n\n=========================================\n");
-    printf("[Proceso %d] Cambio de estado: %s -> %s\n", pcb->process_id,
-            pcb->state == READY ? "READY" :
-            pcb->state == RUNNING ? "RUNNING" : "WAITING",
-            new_state == READY ? "READY" :
-            new_state == RUNNING ? "RUNNING" : "WAITING");
-
-    // Actualizar estadísticas basadas en el estado anterior
     switch (pcb->state) {
         case READY:
             if (new_state == RUNNING) {
@@ -46,10 +137,10 @@ void update_pcb_state(ProcessControlBlock* pcb, ProcessState new_state) {
                 pcb->avg_ready_wait_time = pcb->total_ready_wait_time / pcb->iterations;
             }
             break;
+
         case WAITING:
-            // Cuando sale de WAITING, actualizar el tiempo total y promedio de E/S
             if (new_state != WAITING) {
-                pcb->total_io_wait_time += (pcb->current_io_wait_time / 1000.0); // ms a segundos
+                pcb->total_io_wait_time += (pcb->current_io_wait_time / 1000.0);
                 pcb->avg_io_wait_time = pcb->total_io_wait_time / pcb->total_io_waits;
             }
             break;
@@ -57,193 +148,187 @@ void update_pcb_state(ProcessControlBlock* pcb, ProcessState new_state) {
             break;
     }
 
-    // Solo incrementar contador de E/S cuando entra a WAITING
     if (new_state == WAITING && pcb->state != WAITING) {
         pcb->total_io_waits++;
     }
 
-    // Actualizar estado y timestamp
     pcb->state = new_state;
     pcb->last_state_change = current_time;
-
-    // Imprimir estadísticas actualizadas
-    printf("[Proceso %d] Iteraciones: %d\n", pcb->process_id, pcb->iterations);
-    printf("[Proceso %d] Promedio tiempo espera E/S: %.2f segundos\n", pcb->process_id, pcb->avg_io_wait_time);
-    printf("[Proceso %d] Promedio tiempo espera Ready: %.2f segundos\n", pcb->process_id, pcb->avg_ready_wait_time);
-    printf("[Proceso %d] Total de tiempo en E/S: %.2f segundos\n", pcb->process_id, pcb->total_io_wait_time);
-    printf("[Proceso %d] Total de tiempo en Ready: %.2f segundos\n", pcb->process_id, pcb->total_ready_wait_time);
-    printf("[Proceso %d] Estado actual: %s\n", pcb->process_id, pcb->state == READY ? "READY" : pcb->state == RUNNING ? "RUNNING" : "WAITING");
-    printf("[Proceso %d] Total E/S realizadas: %d\n", pcb->process_id, pcb->total_io_waits);
-    printf("=========================================\n\n");
-}
-
-void write_to_pcb_file(FILE* file, ProcessControlBlock* pcb) {
-    if (!file || !pcb) return;
-
-    char arrival_time_str[100];
-    strftime(arrival_time_str, sizeof(arrival_time_str), "%Y-%m-%d %H:%M:%S", localtime(&pcb->arrival_time));
-    
-    fprintf(file, "============= PCB Colmena %d =============\n", pcb->process_id);
-    fprintf(file, "ID Proceso: %d\n", pcb->process_id);
-    fprintf(file, "Tiempo de llegada: %s\n", arrival_time_str);
-    fprintf(file, "Iteraciones totales: %d\n", pcb->iterations);
-    fprintf(file, "Promedio tiempo espera E/S: %.2f segundos\n", pcb->avg_io_wait_time);
-    fprintf(file, "Promedio tiempo espera Ready: %.2f segundos\n", pcb->avg_ready_wait_time);
-    fprintf(file, "Estado actual: %s\n", pcb->state == READY ? "READY" : pcb->state == RUNNING ? "RUNNING" : "WAITING");
-    fprintf(file, "Total E/S realizadas: %d\n", pcb->total_io_waits);  // Agregado para debug
-    fprintf(file, "=========================================\n\n");
+    save_pcb(pcb);
 }
 
 void save_pcb(ProcessControlBlock* pcb) {
-    // Primero verificar si el proceso ya existe
-    FILE* file = fopen(PCB_FILE, "r");
-    bool exists = false;
-    char line[1024];
-    char temp_file[1024];
+    pthread_mutex_lock(&pcb_mutex);
+    
+    json_object* array = read_json_file(PCB_FILE);
+    
+    // Create new PCB entry
+    json_object* pcb_obj = pcb_to_json(pcb);
 
-    if (file) {
-        while (fgets(line, sizeof(line), file)) {
-            int id;
-            if (sscanf(line, "============= PCB Colmena %d =============", &id) == 1) {
-                if (id == pcb->process_id) {
-                    exists = true;
-                    break;
-                }
-            }
-        }
-        fclose(file);
-    }
-
-    if (!exists) {
-        // Si no existe, simplemente agregar al final
-        file = fopen(PCB_FILE, "a");
-        if (file) {
-            write_to_pcb_file(file, pcb);
-            fflush(file);
-            fclose(file);
-        }
-    } else {
-        // Si existe, crear archivo temporal y reescribir
-        sprintf(temp_file, "%s.tmp", PCB_FILE);
-        FILE* temp = fopen(temp_file, "w");
-        file = fopen(PCB_FILE, "r");
-
-        if (temp && file) {
-            bool skipping = false;
-            while (fgets(line, sizeof(line), file)) {
-                int id;
-                if (sscanf(line, "============= PCB Colmena %d =============", &id) == 1) {
-                    if (id == pcb->process_id) {
-                        write_to_pcb_file(temp, pcb);
-                        skipping = true;
-                    } else {
-                        skipping = false;
-                    }
-                }
-
-                if (!skipping) {
-                    fputs(line, temp);
-                }
-            }
-
-            fclose(file);
-            fclose(temp);
-
-            // Reemplazar el archivo original con el temporal
-            remove(PCB_FILE);
-            rename(temp_file, PCB_FILE);
-        } else {
-            if (temp) fclose(temp);
-            if (file) fclose(file);
+    // Check if process already exists and update if it does
+    bool found = false;
+    for (size_t i = 0; i < json_object_array_length(array); i++) {
+        json_object* existing_pcb = json_object_array_get_idx(array, i);
+        json_object* existing_id;
+        
+        if (json_object_object_get_ex(existing_pcb, "process_id", &existing_id) &&
+            json_object_get_int(existing_id) == pcb->process_id) {
+            json_object_array_put_idx(array, i, pcb_obj);
+            found = true;
+            break;
         }
     }
-}
-
-void save_process_table(ProcessTable* table) {
-    FILE* file = fopen(PROCESS_TABLE_FILE, "w");
-    if (file) {
-        fprintf(file, "Promedio tiempo de llegada: %.2f segundos\n", table->avg_arrival_time);
-        fprintf(file, "Promedio iteraciones: %.2f\n", table->avg_iterations);
-        fprintf(file, "Promedio tiempo de espera en E/S: %.2f segundos\n", table->avg_io_wait_time);
-        fprintf(file, "Promedio tiempo de espera Ready: %.2f segundos\n", table->avg_ready_wait_time);
-        fprintf(file, "Total de procesos: %d\n", table->total_processes);
-        fflush(file);
-        fclose(file);
+    
+    // If process doesn't exist, add it
+    if (!found) {
+        json_object_array_add(array, pcb_obj);
     }
+    
+    write_json_file(PCB_FILE, array);
+    json_object_put(array);
+    
+    pthread_mutex_unlock(&pcb_mutex);
 }
 
 ProcessTable* load_process_table(void) {
+    pthread_mutex_lock(&process_table_mutex);
+    
     ProcessTable* table = malloc(sizeof(ProcessTable));
-    memset(table, 0, sizeof(ProcessTable));  // Inicializar todo a 0
-
-    FILE* file = fopen(PROCESS_TABLE_FILE, "r");
-    if (file) {
-        char line[256];
-        while (fgets(line, sizeof(line), file)) {
-            double value;
-            int total_proc;  // Nueva variable para el total de procesos
-            if (sscanf(line, "Promedio tiempo de llegada: %lf", &value) == 1)
-                table->avg_arrival_time = value;
-            else if (sscanf(line, "Promedio iteraciones: %lf", &value) == 1)
-                table->avg_iterations = value;
-            else if (sscanf(line, "Promedio tiempo de espera en E/S: %lf", &value) == 1)
-                table->avg_io_wait_time = value;
-            else if (sscanf(line, "Promedio tiempo de espera Ready: %lf", &value) == 1)
-                table->avg_ready_wait_time = value;
-            else if (sscanf(line, "Total de procesos: %d", &total_proc) == 1)
-                table->total_processes = total_proc;
-        }
-        fclose(file);
-    }
-
+    memset(table, 0, sizeof(ProcessTable));
+    
+    json_object* root = read_json_file(PROCESS_TABLE_FILE);
+    
+    json_object* temp;
+    if (json_object_object_get_ex(root, "avg_arrival_time", &temp))
+        table->avg_arrival_time = json_object_get_double(temp);
+    if (json_object_object_get_ex(root, "avg_iterations", &temp))
+        table->avg_iterations = json_object_get_double(temp);
+    if (json_object_object_get_ex(root, "avg_io_wait_time", &temp))
+        table->avg_io_wait_time = json_object_get_double(temp);
+    if (json_object_object_get_ex(root, "avg_ready_wait_time", &temp))
+        table->avg_ready_wait_time = json_object_get_double(temp);
+    if (json_object_object_get_ex(root, "total_processes", &temp))
+        table->total_processes = json_object_get_int(temp);
+    if (json_object_object_get_ex(root, "ready_processes", &temp))
+        table->ready_processes = json_object_get_int(temp);
+    if (json_object_object_get_ex(root, "io_waiting_processes", &temp))
+        table->io_waiting_processes = json_object_get_int(temp);
+    
+    json_object_put(root);
+    
+    pthread_mutex_unlock(&process_table_mutex);
     return table;
+}
+
+void save_process_table(ProcessTable* table) {
+    pthread_mutex_lock(&process_table_mutex);
+    
+    json_object* obj = json_object_new_object();
+    
+    json_object_object_add(obj, "avg_arrival_time", json_object_new_double(table->avg_arrival_time));
+    json_object_object_add(obj, "avg_iterations", json_object_new_double(table->avg_iterations));
+    json_object_object_add(obj, "avg_io_wait_time", json_object_new_double(table->avg_io_wait_time));
+    json_object_object_add(obj, "avg_ready_wait_time", json_object_new_double(table->avg_ready_wait_time));
+    json_object_object_add(obj, "total_processes", json_object_new_int(table->total_processes));
+    json_object_object_add(obj, "ready_processes", json_object_new_int(table->ready_processes));
+    json_object_object_add(obj, "io_waiting_processes", json_object_new_int(table->io_waiting_processes));
+    
+    write_json_file(PROCESS_TABLE_FILE, obj);
+    json_object_put(obj);
+    
+    pthread_mutex_unlock(&process_table_mutex);
 }
 
 void update_process_table(ProcessControlBlock* pcb) {
     ProcessTable* table = load_process_table();
-
+    
     // Calcular nuevos promedios
     double old_weight = (double)(table->total_processes) / (table->total_processes + 1);
     double new_weight = 1.0 / (table->total_processes + 1);
-
-    table->avg_arrival_time = (table->avg_arrival_time * old_weight) + 
+    
+    table->avg_arrival_time = (table->avg_arrival_time * old_weight) +
                              (difftime(time(NULL), pcb->arrival_time) * new_weight);
-    table->avg_iterations = (table->avg_iterations * old_weight) + 
+    table->avg_iterations = (table->avg_iterations * old_weight) +
                            (pcb->iterations * new_weight);
-    table->avg_io_wait_time = (table->avg_io_wait_time * old_weight) + 
+    table->avg_io_wait_time = (table->avg_io_wait_time * old_weight) +
                              (pcb->avg_io_wait_time * new_weight);
-    table->avg_ready_wait_time = (table->avg_ready_wait_time * old_weight) + 
+    table->avg_ready_wait_time = (table->avg_ready_wait_time * old_weight) +
                                 (pcb->avg_ready_wait_time * new_weight);
+    
     table->total_processes++;
-
+    
+    // Actualizar contadores de procesos por estado
+    if (pcb->state == READY) table->ready_processes++;
+    else if (pcb->state == WAITING) table->io_waiting_processes++;
+    
     save_process_table(table);
     free(table);
 }
 
 void save_beehive_history(Beehive* hive) {
-    FILE* file = fopen(BEEHIVE_HISTORY_FILE, "a");
-    if (file) {
-        time_t current_time;
-        time(&current_time);
+    if (!hive) return;
 
-        fprintf(file, "============= Registro de Colmena =============\n");
-        fprintf(file, "Timestamp: %s", ctime(&current_time));
-        fprintf(file, "ID Colmena: %d\n", hive->id);
-        fprintf(file, "Huevos:\n");
-        fprintf(file, "  - Total actual: %d\n", hive->egg_count);
-        fprintf(file, "  - Eclosionados: %d\n", hive->hatched_eggs);
-        fprintf(file, "Abejas:\n");
-        fprintf(file, "  - Muertas: %d\n", hive->dead_bees);
-        fprintf(file, "  - Nacidas: %d\n", hive->born_bees);
-        fprintf(file, "  - Total actual: %d\n", hive->bee_count);
-        fprintf(file, "Polen:\n");
-        fprintf(file, "  - Total recolectado: %d\n", hive->threads.resources.total_polen_collected);
-        fprintf(file, "  - Disponible para miel: %d\n", hive->threads.resources.polen_for_honey);
-        fprintf(file, "Miel:\n");
-        fprintf(file, "  - Producida: %d\n", hive->produced_honey);
-        fprintf(file, "  - Total actual: %d\n", hive->honey_count);
-        fprintf(file, "===============================================\n\n");
-        fflush(file);
-        fclose(file);
-    }
+    pthread_mutex_lock(&history_mutex);
+    
+    // Leer el historial existente o crear uno nuevo
+    json_object* array = read_json_file(BEEHIVE_HISTORY_FILE);
+    
+    // Añadir nueva entrada al array de históricos
+    json_object_array_add(array, beehive_history_to_json(hive));
+    
+    write_json_file(BEEHIVE_HISTORY_FILE, array);
+    json_object_put(array);
+    
+    pthread_mutex_unlock(&history_mutex);
+}
+
+static json_object* beehive_history_to_json(BeehiveHistory* history) {
+    json_object* obj = json_object_new_object();
+    
+    json_object_object_add(obj, "timestamp", json_object_new_int64(history->timestamp));
+    json_object_object_add(obj, "beehive_id", json_object_new_int(history->beehive_id));
+    
+    // Huevos
+    json_object* eggs = json_object_new_object();
+    json_object_object_add(eggs, "current", json_object_new_int(history->current_eggs));
+    json_object_object_add(eggs, "hatched", json_object_new_int(history->hatched_eggs));
+    json_object_object_add(eggs, "laid", json_object_new_int(history->laid_eggs));
+    json_object_object_add(obj, "eggs", eggs);
+    
+    // Abejas
+    json_object* bees = json_object_new_object();
+    json_object_object_add(bees, "dead", json_object_new_int(history->dead_bees));
+    json_object_object_add(bees, "born", json_object_new_int(history->born_bees));
+    json_object_object_add(bees, "current", json_object_new_int(history->current_bees));
+    json_object_object_add(obj, "bees", bees);
+    
+    // Polen
+    json_object* polen = json_object_new_object();
+    json_object_object_add(polen, "total_collected", json_object_new_int(history->total_polen_collected));
+    json_object_object_add(polen, "available", json_object_new_int(history->polen_for_honey));
+    json_object_object_add(obj, "polen", polen);
+    
+    // Miel
+    json_object* honey = json_object_new_object();
+    json_object_object_add(honey, "produced", json_object_new_int(history->produced_honey));
+    json_object_object_add(honey, "total", json_object_new_int(history->total_honey));
+    json_object_object_add(obj, "honey", honey);
+    
+    return obj;
+}
+
+static json_object* pcb_to_json(ProcessControlBlock* pcb) {
+    json_object* obj = json_object_new_object();
+    
+    json_object_object_add(obj, "process_id", json_object_new_int(pcb->process_id));
+    json_object_object_add(obj, "arrival_time", json_object_new_int64(pcb->arrival_time));
+    json_object_object_add(obj, "iterations", json_object_new_int(pcb->iterations));
+    json_object_object_add(obj, "avg_io_wait_time", json_object_new_double(pcb->avg_io_wait_time));
+    json_object_object_add(obj, "avg_ready_wait_time", json_object_new_double(pcb->avg_ready_wait_time));
+    json_object_object_add(obj, "state", json_object_new_string(process_state_to_string(pcb->state)));
+    json_object_object_add(obj, "total_io_waits", json_object_new_int(pcb->total_io_waits));
+    json_object_object_add(obj, "total_io_wait_time", json_object_new_double(pcb->total_io_wait_time));
+    json_object_object_add(obj, "total_ready_wait_time", json_object_new_double(pcb->total_ready_wait_time));
+    
+    return obj;
 }

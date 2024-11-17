@@ -3,11 +3,12 @@
 
 #include <time.h>
 #include <stdbool.h>
+#include <json-c/json.h>
 
 // Constants
-#define PCB_FILE "data/pcb.txt"
-#define PROCESS_TABLE_FILE "data/process_table.txt"
-#define BEEHIVE_HISTORY_FILE "data/beehive_history.txt"
+#define PCB_FILE "data/pcb.json"
+#define PROCESS_TABLE_FILE "data/process_table.json"
+#define BEEHIVE_HISTORY_FILE "data/beehive_history.json"
 #define MAX_FILENAME_LENGTH 100
 
 typedef enum {
@@ -23,14 +24,12 @@ typedef struct {
     double avg_io_wait_time;
     double avg_ready_wait_time;
     ProcessState state;
-    
-    // Variables de control para cálculos de promedios
     int total_io_waits;
     time_t last_ready_time;
     time_t last_state_change;
     double total_io_wait_time;
     double total_ready_wait_time;
-    int current_io_wait_time;  // Movido aquí desde ProcessInfo
+    int current_io_wait_time;
 } ProcessControlBlock;
 
 typedef struct {
@@ -39,18 +38,23 @@ typedef struct {
     double avg_io_wait_time;
     double avg_ready_wait_time;
     int total_processes;
+    int ready_processes;
+    int io_waiting_processes;
 } ProcessTable;
 
 typedef struct {
     int beehive_id;
-    int egg_count;
+    time_t timestamp;
+    int current_eggs;
     int hatched_eggs;
+    int laid_eggs;
     int dead_bees;
     int born_bees;
-    int total_bees;
+    int current_bees;
+    int total_polen_collected;
+    int polen_for_honey;
     int produced_honey;
     int total_honey;
-    time_t timestamp;
 } BeehiveHistory;
 
 #endif

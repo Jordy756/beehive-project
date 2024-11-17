@@ -230,6 +230,7 @@ void return_to_ready_queue(ProcessInfo* process) {
     
     process->is_running = false;
     process->in_io = false;
+
     update_pcb_state(&process->pcb, READY);  // Actualizar PCB al volver a cola de listos
     reset_process_timeslice(process);
     
@@ -283,6 +284,7 @@ void preempt_current_process(void) {
 void suspend_process(ProcessInfo* process) {
     if (process != NULL) {
         process->is_running = false;
+        process->hive->state = READY;
         update_pcb_state(&process->pcb, READY);
     }
 }
@@ -290,6 +292,7 @@ void suspend_process(ProcessInfo* process) {
 void resume_process(ProcessInfo* process) {
     if (process != NULL) {
         process->is_running = true;
+        process->hive->state = RUNNING;
         process->last_quantum_start = time(NULL);
         update_pcb_state(&process->pcb, RUNNING);
         reset_process_timeslice(process);

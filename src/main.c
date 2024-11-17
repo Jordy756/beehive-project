@@ -198,6 +198,7 @@ int main() {
 
             if (current_hive != NULL && !current_hive->should_terminate) {
                 sem_wait(job_queue[i].shared_resource_sem);
+                // print_beehive_stats(current_hive);
                 
                 // Actualizar PCB y archivos usando el PCB del proceso actual
                 save_beehive_history(current_hive);
@@ -209,8 +210,6 @@ int main() {
                 if (scheduler_state.current_policy == SHORTEST_JOB_FIRST) {
                     check_fsj_preemption(&job_queue[i]);
                 }
-                
-                print_beehive_stats(current_hive);
 
                 // Verificar nueva reina y crear nueva colmena si es posible
                 if (check_new_queen(current_hive) && total_beehives < MAX_BEEHIVES) {
@@ -234,6 +233,8 @@ int main() {
                                 total_beehives, MAX_BEEHIVES);
                     }
                 }
+
+                print_beehive_stats(current_hive);
 
                 sem_post(job_queue[i].shared_resource_sem);
             }

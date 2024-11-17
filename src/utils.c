@@ -15,3 +15,10 @@ int random_range(int min, int max) {
 void delay_ms(int milliseconds) {
     usleep(milliseconds * 1000);
 }
+
+char* format_time(time_t t) {
+    static char buffer[26];
+    struct tm* tm_info = localtime(&t);
+    strftime(buffer, 26, "%Y-%m-%d %H:%M:%S", tm_info);
+    return buffer;
+}

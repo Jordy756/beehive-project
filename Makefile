@@ -1,6 +1,6 @@
 CC=gcc
 CFLAGS=-Wall -Wextra -I./include/core -I./include/types -pthread
-LDFLAGS=-pthread
+LDFLAGS=-pthread -ljson-c
 
 # Directorios
 SRC_DIR=src
@@ -40,5 +40,5 @@ run: all
 	./$(EXEC)
 
 clean:
-	@echo "Limpiando archivos objeto y ejecutables..."
-	@rm -rf $(OBJ_DIR) $(BIN_DIR)
+	@echo "Limpiando archivos objeto, ejecutables y datos..."
+	@rm -rf $(OBJ_DIR) $(BIN_DIR) $(DATA_DIR)

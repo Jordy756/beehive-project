@@ -4,21 +4,25 @@
 #include "../types/file_manager_types.h"
 #include "../types/beehive_types.h"
 
-// Inicialización del sistema de archivos
+// System initialization
 void init_file_manager(void);
 
-// Funciones para PCB
-void write_to_pcb_file(FILE* file, ProcessControlBlock* pcb);
+// PCB operations
 void save_pcb(ProcessControlBlock* pcb);
-void init_pcb(ProcessControlBlock* pcb, int process_id);
 void update_pcb_state(ProcessControlBlock* pcb, ProcessState new_state);
+void init_pcb(ProcessControlBlock* pcb, int process_id);
 
-// Funciones para tabla de procesos
+// Process table operations
 void save_process_table(ProcessTable* table);
 ProcessTable* load_process_table(void);
 void update_process_table(ProcessControlBlock* pcb);
 
-// Funciones para historial de colmena
+// Beehive history operations
 void save_beehive_history(Beehive* hive);
+
+// Thread safety
+extern pthread_mutex_t pcb_mutex;
+extern pthread_mutex_t process_table_mutex;
+extern pthread_mutex_t history_mutex;
 
 #endif
