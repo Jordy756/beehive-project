@@ -250,7 +250,7 @@ void manage_bee_lifecycle(Beehive* hive) {
                 }
                 
                 // printf("[Reina - Colmena %d] Huevos puestos: %d, Total huevos en colmena: %d/%d\n",
-                    //    hive->id, eggs_laid, hive->egg_count, MAX_EGGS_PER_HIVE);
+                //        hive->id, eggs_laid, hive->egg_count, MAX_EGGS_PER_HIVE);
                 break;
             }
         }
@@ -318,21 +318,22 @@ void manage_bee_lifecycle(Beehive* hive) {
 
 void* hive_main_thread(void* arg) {
     Beehive* hive = (Beehive*)arg;
-    
     while (hive->threads.thread_running && !hive->should_terminate) {
-        // Gestionar la producción de miel
-        manage_honey_production(hive);
+        sem_wait(&hive->resource_sem);
         
-        // Gestionar la recolección de polen
-        manage_polen_collection(hive);
+        if (hive->state == RUNNING) {
+            // Imprimir el proceso que esta corriendo
+            printf("Colmena %d en ejecución\n", hive->id);
+            manage_honey_production(hive);
+            manage_polen_collection(hive);
+            manage_bee_lifecycle(hive);
+            print_beehive_stats(hive);
+            // save_beehive_history(hive);
+        }
         
-        // Gestionar el ciclo de vida de las abejas
-        manage_bee_lifecycle(hive);
-        
-        // Pequeña pausa entre ciclos
-        delay_ms(2000);
+        sem_post(&hive->resource_sem);
+        delay_ms(100);
     }
-    
     return NULL;
 }
 
@@ -441,5 +442,4 @@ void print_beehive_stats(Beehive* hive) {
     // printf("Total de huevos: %d/%d\n", hive->egg_count, MAX_EGGS_PER_HIVE);
     
     print_chamber_matrix(hive);
-    delay_ms(2000);
 }

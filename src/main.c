@@ -200,8 +200,8 @@ int main() {
                 sem_wait(job_queue[i].shared_resource_sem);
                 
                 // Actualizar PCB y archivos usando el PCB del proceso actual
-                save_beehive_history(current_hive);
-                save_pcb(&job_queue[i].pcb);
+                // save_pcb(&job_queue[i].pcb);
+                // save_beehive_history(current_hive);
                 
                 // Programar proceso usando su propio PCB
                 schedule_process(&job_queue[i].pcb);
@@ -209,8 +209,6 @@ int main() {
                 if (scheduler_state.current_policy == SHORTEST_JOB_FIRST) {
                     check_fsj_preemption(&job_queue[i]);
                 }
-                
-                print_beehive_stats(current_hive);
 
                 // Verificar nueva reina y crear nueva colmena si es posible
                 if (check_new_queen(current_hive) && total_beehives < MAX_BEEHIVES) {
@@ -230,10 +228,11 @@ int main() {
 
                         printf("\n=== ¡Nueva Colmena Creada! ===\n");
                         printf("- ID de la nueva colmena: %d\n", new_index);
-                        printf("- Total de colmenas activas: %d/%d\n\n",
-                                total_beehives, MAX_BEEHIVES);
+                        printf("- Total de colmenas activas: %d/%d\n\n", total_beehives, MAX_BEEHIVES);
                     }
                 }
+
+                
 
                 sem_post(job_queue[i].shared_resource_sem);
             }
@@ -250,7 +249,7 @@ int main() {
         }
 
         // Pequeña pausa para no saturar el CPU
-        delay_ms(100);
+        delay_ms(5000);
     }
 
     printf("\nEsperando a que todas las colmenas terminen...\n");
