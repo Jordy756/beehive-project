@@ -200,7 +200,8 @@ int main() {
                 sem_wait(job_queue[i].shared_resource_sem);
                 
                 // Actualizar PCB y archivos usando el PCB del proceso actual
-                save_pcb(&job_queue[i].pcb);
+                // save_pcb(&job_queue[i].pcb);
+                // save_beehive_history(current_hive);
                 
                 // Programar proceso usando su propio PCB
                 schedule_process(&job_queue[i].pcb);
@@ -248,7 +249,7 @@ int main() {
         }
 
         // Pequeña pausa para no saturar el CPU
-        delay_ms(2000);
+        delay_ms(5000);
     }
 
     printf("\nEsperando a que todas las colmenas terminen...\n");

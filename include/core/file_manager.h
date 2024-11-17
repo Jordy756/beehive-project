@@ -9,8 +9,10 @@ void init_file_manager(void);
 
 // PCB operations
 void save_pcb(ProcessControlBlock* pcb);
-void update_pcb_state(ProcessControlBlock* pcb, ProcessState new_state);
+void update_pcb_state(ProcessControlBlock* pcb, ProcessState new_state, Beehive* hive);
 void init_pcb(ProcessControlBlock* pcb, int process_id);
+bool pcb_exists(int process_id);
+void create_pcb_for_beehive(Beehive* hive);
 
 // Process table operations
 void save_process_table(ProcessTable* table);

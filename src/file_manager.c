@@ -6,10 +6,10 @@
 #include <time.h>
 #include <json-c/json.h>
 #include <pthread.h>
-#include <unistd.h>     
-#include <sys/stat.h>   
-#include <sys/types.h>  
-#include <errno.h>      
+#include <unistd.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <errno.h>
 
 // Initialize mutex for thread-safe file operations
 pthread_mutex_t pcb_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -24,14 +24,10 @@ static json_object* beehive_history_to_json(Beehive* hive);
 // Private function implementations
 static const char* process_state_to_string(ProcessState state) {
     switch (state) {
-        case RUNNING:
-            return "running";
-        case READY:
-            return "ready";
-        case WAITING:
-            return "waiting";
-        default:
-            return "unknown";
+        case RUNNING: return "running";
+        case READY: return "ready";
+        case WAITING: return "waiting";
+        default: return "unknown";
     }
 }
 
@@ -39,6 +35,7 @@ static json_object* pcb_to_json(ProcessControlBlock* pcb) {
     json_object* obj = json_object_new_object();
     
     json_object_object_add(obj, "process_id", json_object_new_int(pcb->process_id));
+    json_object_object_add(obj, "creation_time", json_object_new_string(format_time(pcb->creation_time)));
     json_object_object_add(obj, "arrival_time", json_object_new_string(format_time(pcb->arrival_time)));
     json_object_object_add(obj, "iterations", json_object_new_int(pcb->iterations));
     json_object_object_add(obj, "avg_io_wait_time", json_object_new_double(pcb->avg_io_wait_time));
@@ -116,6 +113,7 @@ void init_file_manager(void) {
 
 void init_pcb(ProcessControlBlock* pcb, int process_id) {
     pcb->process_id = process_id;
+    pcb->creation_time = time(NULL);
     pcb->arrival_time = time(NULL);
     pcb->iterations = 0;
     pcb->avg_io_wait_time = 0.0;
@@ -126,14 +124,61 @@ void init_pcb(ProcessControlBlock* pcb, int process_id) {
     pcb->total_ready_wait_time = 0.0;
     pcb->last_ready_time = time(NULL);
     pcb->last_state_change = time(NULL);
+    pcb->exists = false;
 }
 
-void update_pcb_state(ProcessControlBlock* pcb, ProcessState new_state) {
-    if (pcb == NULL) return;
+void create_pcb_for_beehive(Beehive* hive) {
+    if (!hive) return;
+    
+    pthread_mutex_lock(&pcb_mutex);
+    
+    json_object* array = read_json_array_file(PCB_FILE);
+    ProcessControlBlock new_pcb;
+    init_pcb(&new_pcb, hive->id);
+    new_pcb.exists = true;
+    
+    json_object* pcb_obj = pcb_to_json(&new_pcb);
+    json_object_array_add(array, pcb_obj);
+    
+    write_json_file(PCB_FILE, array);
+    json_object_put(array);
+    
+    pthread_mutex_unlock(&pcb_mutex);
+}
+
+bool pcb_exists(int process_id) {
+    pthread_mutex_lock(&pcb_mutex);
+    
+    bool exists = false;
+    json_object* array = read_json_array_file(PCB_FILE);
+    
+    for (size_t i = 0; i < json_object_array_length(array); i++) {
+        json_object* existing_pcb = json_object_array_get_idx(array, i);
+        json_object* existing_id;
+        
+        if (json_object_object_get_ex(existing_pcb, "process_id", &existing_id)) {
+            if (json_object_get_int(existing_id) == process_id) {
+                exists = true;
+                break;
+            }
+        }
+    }
+    
+    json_object_put(array);
+    pthread_mutex_unlock(&pcb_mutex);
+    
+    return exists;
+}
+
+void update_pcb_state(ProcessControlBlock* pcb, ProcessState new_state, Beehive* hive) {
+    if (!pcb) return;
     
     time_t current_time = time(NULL);
     double elapsed_time = difftime(current_time, pcb->last_state_change);
 
+    // Imprimir el estado actual y a que estado va
+    printf("Proceso %d: %s -> %s\n", pcb->process_id, process_state_to_string(pcb->state), process_state_to_string(new_state));
+    
     switch (pcb->state) {
         case READY:
             if (new_state == RUNNING) {
@@ -144,25 +189,32 @@ void update_pcb_state(ProcessControlBlock* pcb, ProcessState new_state) {
                 pcb->avg_ready_wait_time = pcb->total_ready_wait_time / pcb->iterations;
             }
             break;
-
+            
         case WAITING:
-            if (new_state != WAITING) {
+            if (new_state == READY) {
+                pcb->state = new_state;
                 pcb->total_io_wait_time += (pcb->current_io_wait_time / 1000.0);
                 pcb->avg_io_wait_time = pcb->total_io_wait_time / pcb->total_io_waits;
+                save_pcb(pcb);
+                save_beehive_history(hive);
             }
             break;
-
+            
         case RUNNING:
+            if (new_state == READY) {
+                pcb->state = new_state;
+                save_pcb(pcb);
+                save_beehive_history(hive);
+            }
             break;
     }
-
+    
     if (new_state == WAITING && pcb->state != WAITING) {
         pcb->total_io_waits++;
     }
-
+    
     pcb->state = new_state;
     pcb->last_state_change = current_time;
-    save_pcb(pcb);
 }
 
 void save_pcb(ProcessControlBlock* pcb) {
@@ -170,7 +222,7 @@ void save_pcb(ProcessControlBlock* pcb) {
     
     json_object* array = read_json_array_file(PCB_FILE);
     json_object* pcb_obj = pcb_to_json(pcb);
-
+    
     // Check if process already exists and update if it does
     bool found = false;
     for (size_t i = 0; i < json_object_array_length(array); i++) {
@@ -188,6 +240,7 @@ void save_pcb(ProcessControlBlock* pcb) {
     // If process doesn't exist, add it
     if (!found) {
         json_object_array_add(array, pcb_obj);
+        pcb->exists = true;
     }
     
     write_json_file(PCB_FILE, array);
@@ -203,26 +256,32 @@ ProcessTable* load_process_table(void) {
     memset(table, 0, sizeof(ProcessTable));
     
     json_object* root = read_json_array_file(PROCESS_TABLE_FILE);
-    
     json_object* temp;
+    
     if (json_object_object_get_ex(root, "avg_arrival_time", &temp))
         table->avg_arrival_time = json_object_get_double(temp);
+    
     if (json_object_object_get_ex(root, "avg_iterations", &temp))
         table->avg_iterations = json_object_get_double(temp);
+    
     if (json_object_object_get_ex(root, "avg_io_wait_time", &temp))
         table->avg_io_wait_time = json_object_get_double(temp);
+    
     if (json_object_object_get_ex(root, "avg_ready_wait_time", &temp))
         table->avg_ready_wait_time = json_object_get_double(temp);
+    
     if (json_object_object_get_ex(root, "total_processes", &temp))
         table->total_processes = json_object_get_int(temp);
+    
     if (json_object_object_get_ex(root, "ready_processes", &temp))
         table->ready_processes = json_object_get_int(temp);
+    
     if (json_object_object_get_ex(root, "io_waiting_processes", &temp))
         table->io_waiting_processes = json_object_get_int(temp);
     
     json_object_put(root);
-    
     pthread_mutex_unlock(&process_table_mutex);
+    
     return table;
 }
 
@@ -253,10 +312,13 @@ void update_process_table(ProcessControlBlock* pcb) {
     
     table->avg_arrival_time = (table->avg_arrival_time * old_weight) +
                              (difftime(time(NULL), pcb->arrival_time) * new_weight);
+    
     table->avg_iterations = (table->avg_iterations * old_weight) +
                            (pcb->iterations * new_weight);
+    
     table->avg_io_wait_time = (table->avg_io_wait_time * old_weight) +
                              (pcb->avg_io_wait_time * new_weight);
+    
     table->avg_ready_wait_time = (table->avg_ready_wait_time * old_weight) +
                                 (pcb->avg_ready_wait_time * new_weight);
     
@@ -271,7 +333,7 @@ void update_process_table(ProcessControlBlock* pcb) {
 
 void save_beehive_history(Beehive* hive) {
     if (!hive) return;
-
+    
     pthread_mutex_lock(&history_mutex);
     
     json_object* array = read_json_array_file(BEEHIVE_HISTORY_FILE);

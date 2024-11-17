@@ -18,18 +18,20 @@ typedef enum {
 } ProcessState;
 
 typedef struct {
-    int process_id;
-    time_t arrival_time;
-    int iterations;
-    double avg_io_wait_time;
-    double avg_ready_wait_time;
-    ProcessState state;
-    int total_io_waits;
-    time_t last_ready_time;
-    time_t last_state_change;
-    double total_io_wait_time;
-    double total_ready_wait_time;
-    int current_io_wait_time;
+    int process_id;                  // ID único del proceso/colmena
+    time_t creation_time;           // Momento de creación del proceso
+    time_t arrival_time;            // Último tiempo de llegada a cola
+    int iterations;                 // Número de veces que ha entrado en ejecución
+    double avg_io_wait_time;        // Tiempo promedio en espera de E/S
+    double avg_ready_wait_time;     // Tiempo promedio en cola de listos
+    ProcessState state;             // Estado actual del proceso
+    int total_io_waits;            // Número total de operaciones E/S
+    time_t last_ready_time;        // Último momento que entró en ready
+    time_t last_state_change;      // Último cambio de estado
+    double total_io_wait_time;     // Tiempo total en espera de E/S
+    double total_ready_wait_time;  // Tiempo total en cola de listos
+    int current_io_wait_time;      // Tiempo actual de espera de E/S
+    bool exists;                   // Indica si el PCB ya existe
 } ProcessControlBlock;
 
 typedef struct {
@@ -41,20 +43,5 @@ typedef struct {
     int ready_processes;
     int io_waiting_processes;
 } ProcessTable;
-
-typedef struct {
-    int beehive_id;
-    time_t timestamp;
-    int current_eggs;
-    int hatched_eggs;
-    int laid_eggs;
-    int dead_bees;
-    int born_bees;
-    int current_bees;
-    int total_polen_collected;
-    int polen_for_honey;
-    int produced_honey;
-    int total_honey;
-} BeehiveHistory;
 
 #endif

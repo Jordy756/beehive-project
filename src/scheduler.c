@@ -170,7 +170,7 @@ bool check_and_handle_io(ProcessInfo* process) {
     if (random_range(1, 100) <= IO_PROBABILITY) {
         printf("\nProceso %d entrando a E/S\n", process->index);
         process->in_io = true;
-        update_pcb_state(&process->pcb, WAITING);  // Actualizar PCB al entrar a E/S
+        update_pcb_state(&process->pcb, WAITING, process->hive);// Actualizar PCB al entrar a E/S
         add_to_io_queue(process);
         return true;
     }
@@ -231,7 +231,7 @@ void return_to_ready_queue(ProcessInfo* process) {
     process->is_running = false;
     process->in_io = false;
 
-    update_pcb_state(&process->pcb, READY);  // Actualizar PCB al volver a cola de listos
+    update_pcb_state(&process->pcb, READY, process->hive); // Actualizar PCB al volver a cola de listos
     reset_process_timeslice(process);
     
     if (scheduler_state.current_policy == SHORTEST_JOB_FIRST) {
@@ -275,7 +275,7 @@ void* io_manager_thread(void* arg) {
 
 void preempt_current_process(void) {
     if (scheduler_state.active_process != NULL) {
-        update_pcb_state(&scheduler_state.active_process->pcb, READY);  // Actualizar PCB al ser interrumpido
+        update_pcb_state(&scheduler_state.active_process->pcb, READY, scheduler_state.active_process->hive);  // Actualizar PCB al ser interrumpido
         suspend_process(scheduler_state.active_process);
         scheduler_state.active_process = NULL;
     }
@@ -285,7 +285,7 @@ void suspend_process(ProcessInfo* process) {
     if (process != NULL) {
         process->is_running = false;
         process->hive->state = READY;
-        update_pcb_state(&process->pcb, READY);
+        update_pcb_state(&process->pcb, READY, process->hive);
     }
 }
 
@@ -294,7 +294,7 @@ void resume_process(ProcessInfo* process) {
         process->is_running = true;
         process->hive->state = RUNNING;
         process->last_quantum_start = time(NULL);
-        update_pcb_state(&process->pcb, RUNNING);
+        update_pcb_state(&process->pcb, RUNNING, process->hive);
         reset_process_timeslice(process);
     }
 }
@@ -367,13 +367,13 @@ void* policy_control_thread(void* arg) {
 
 void update_job_queue(Beehive** beehives, int total_beehives) {
     sem_wait(&scheduler_state.queue_sem);
-    
+
     for (int i = 0; i < job_queue_size; i++) {
         cleanup_process_semaphores(&job_queue[i]);
     }
-    
+
     job_queue_size = 0;
-    
+
     for (int i = 0; i < total_beehives; i++) {
         if (beehives[i] != NULL) {
             ProcessInfo* process = &job_queue[job_queue_size];
@@ -384,7 +384,7 @@ void update_job_queue(Beehive** beehives, int total_beehives) {
             process->remaining_time_slice = PROCESS_TIME_SLICE;
             process->preempted = false;
             process->preemption_time = 0;
-            
+
             // Solo inicializar el PCB si es un proceso nuevo
             bool process_exists = false;
             for (int j = 0; j < job_queue_size; j++) {
@@ -394,22 +394,22 @@ void update_job_queue(Beehive** beehives, int total_beehives) {
                     break;
                 }
             }
-            
+
             if (!process_exists) {
                 init_pcb(&process->pcb, i);
             }
-            
+
             init_process_semaphores(process);
             update_process_resources(process);
             update_process_priority(process);
             job_queue_size++;
         }
     }
-    
+
     if (scheduler_state.current_policy == SHORTEST_JOB_FIRST && job_queue_size > 1) {
         sort_processes_fsj(job_queue, job_queue_size);
     }
-    
+
     sem_post(&scheduler_state.queue_sem);
 }
 

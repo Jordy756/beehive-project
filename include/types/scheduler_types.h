@@ -5,6 +5,7 @@
 #include <semaphore.h>
 #include <stdbool.h>
 #include "beehive_types.h"
+#include "file_manager_types.h"
 
 #define MIN_QUANTUM 2
 #define MAX_QUANTUM 10
@@ -24,37 +25,34 @@ typedef enum {
     SHORTEST_JOB_FIRST
 } SchedulingPolicy;
 
-// Nueva estructura para mantener track de recursos del proceso
 typedef struct {
-    int total_resources;       // Suma de abejas y miel
-    int bee_count;            // Número de abejas
-    int honey_count;          // Cantidad de miel
-    time_t last_update;       // Último momento en que se actualizaron los recursos
+    int total_resources;        // Suma de abejas y miel
+    int bee_count;             // Número de abejas
+    int honey_count;           // Cantidad de miel
+    time_t last_update;        // Último momento en que se actualizaron los recursos
 } ProcessResources;
 
 typedef struct {
-    Beehive* hive;
-    int index;
-    sem_t* shared_resource_sem;
-    time_t last_quantum_start;
-    int remaining_time_slice;
-    bool is_running;
-    int priority;
-    bool in_io;
-    ProcessResources resources;
-    bool preempted;
-    time_t preemption_time;
-    ProcessControlBlock pcb;
+    Beehive* hive;                    // Puntero a la colmena asociada
+    int index;                        // Índice en la cola de procesos
+    sem_t* shared_resource_sem;       // Semáforo para recursos compartidos
+    time_t last_quantum_start;        // Inicio del quantum actual
+    int remaining_time_slice;         // Tiempo restante en el slice actual
+    bool is_running;                  // Estado de ejecución
+    int priority;                     // Prioridad del proceso
+    bool in_io;                       // Indica si está en E/S
+    ProcessResources resources;       // Recursos del proceso
+    bool preempted;                   // Indica si fue interrumpido
+    time_t preemption_time;          // Momento de la última interrupción
+    ProcessControlBlock pcb;          // Bloque de control de proceso asociado
 } ProcessInfo;
 
-// Nueva estructura para entrada en cola de E/S
 typedef struct {
     ProcessInfo* process;
     int wait_time;
     time_t start_time;
 } IOQueueEntry;
 
-// Nueva estructura para cola de E/S
 typedef struct {
     IOQueueEntry entries[MAX_IO_QUEUE_SIZE];
     int size;
@@ -67,7 +65,7 @@ typedef struct {
     int current_quantum;
     int quantum_counter;
     int policy_switch_counter;
-    bool sort_by_bees;         // Modificado: ahora solo se usa para debugging
+    bool sort_by_bees;
     bool running;
     pthread_t policy_control_thread;
     pthread_t io_thread;
@@ -75,7 +73,7 @@ typedef struct {
     sem_t queue_sem;
     ProcessInfo* active_process;
     IOQueue* io_queue;
-    pthread_mutex_t preemption_mutex;  // Nuevo: para sincronizar interrupciones
+    pthread_mutex_t preemption_mutex;
 } SchedulerState;
 
 extern SchedulerState scheduler_state;
