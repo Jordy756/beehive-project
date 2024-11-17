@@ -363,7 +363,6 @@ bool check_new_queen(Beehive* hive) {
     bool needs_new_hive = hive->should_create_new_hive;
     if (needs_new_hive) {
         hive->should_create_new_hive = false;  // Reset the flag
-        printf("[Colmena %d] Detectada necesidad de nueva colmena\n", hive->id);
     }
     pthread_mutex_unlock(&hive->chamber_mutex);
     return needs_new_hive;

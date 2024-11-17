@@ -195,16 +195,16 @@ void update_pcb_state(ProcessControlBlock* pcb, ProcessState new_state, Beehive*
                 pcb->state = new_state;
                 pcb->total_io_wait_time += (pcb->current_io_wait_time / 1000.0);
                 pcb->avg_io_wait_time = pcb->total_io_wait_time / pcb->total_io_waits;
-                save_pcb(pcb);
                 save_beehive_history(hive);
+                save_pcb(pcb);
             }
             break;
             
         case RUNNING:
             if (new_state == READY) {
                 pcb->state = new_state;
-                save_pcb(pcb);
                 save_beehive_history(hive);
+                save_pcb(pcb);
             }
             break;
     }
