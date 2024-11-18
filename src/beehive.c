@@ -195,19 +195,13 @@ void* process_main_thread(void* arg) {
     Beehive* hive = process_info->hive;
 
     while (!hive->should_terminate) {
-        // Obtener acceso seguro al PCB
         sem_wait(process_info->shared_resource_sem);
-        
-        // printf("ESTADO EN process_main_thread: Colmena %d: %s\n", 
-        //        hive->id,
-        //        process_info->pcb->state == RUNNING ? "RUNNING" :
-        //        process_info->pcb->state == WAITING ? "WAITING" : "READY");
 
         if (process_info->pcb->state == RUNNING) {
             manage_honey_production(process_info);
             manage_polen_collection(process_info);
             manage_bee_lifecycle(process_info);
-            print_beehive_stats(process_info);
+            // print_beehive_stats(process_info);
 
             // Actualizar estadísticas del proceso
             update_process_resources(process_info);

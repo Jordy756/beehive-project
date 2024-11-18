@@ -17,7 +17,7 @@
 #define PROCESS_TIME_SLICE 100 // Tiempo base en ms para cada proceso
 
 // Constantes para E/S
-#define IO_PROBABILITY 0 // 5% de probabilidad
+#define IO_PROBABILITY 5 // 5% de probabilidad
 #define MIN_IO_WAIT 30 // 30ms mínimo
 #define MAX_IO_WAIT 50 // 50ms máximo
 #define MAX_IO_QUEUE_SIZE 40

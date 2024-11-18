@@ -210,8 +210,7 @@ void update_process_resources(ProcessInfo* process) {
     
     process->resources.bee_count = process->hive->bee_count;
     process->resources.honey_count = process->hive->honey_count;
-    process->resources.total_resources = process->resources.bee_count + 
-                                       process->resources.honey_count;
+    process->resources.total_resources = process->resources.bee_count + process->resources.honey_count;
     process->resources.last_update = time(NULL);
 }
 

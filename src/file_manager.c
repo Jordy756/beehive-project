@@ -155,22 +155,9 @@ void create_pcb_for_beehive(ProcessInfo* process_info) {
 
 void update_pcb_state(ProcessControlBlock* pcb, ProcessState new_state, Beehive* hive) {
     if (!pcb) return;
-
-    // Imprimir el estado del hive
-    if (hive != NULL) {
-        printf("Hive %d: %s -> %s\n",
-               hive->id,
-               process_state_to_string(pcb->state),
-               process_state_to_string(new_state));
-    }
     
     time_t current_time = time(NULL);
     double elapsed_time = difftime(current_time, pcb->last_state_change);
-
-    printf("METODO update_pcb_state: Proceso %d: %s -> %s\n",
-           pcb->process_id,
-           process_state_to_string(pcb->state),
-           process_state_to_string(new_state));
 
     switch (pcb->state) {
         case READY:
@@ -206,7 +193,6 @@ void update_pcb_state(ProcessControlBlock* pcb, ProcessState new_state, Beehive*
 
     pcb->state = new_state;
     pcb->last_state_change = current_time;
-    printf("ESTADO EN update_process_state: Colmena %d: %s\n", pcb->process_id, process_state_to_string(pcb->state));
 }
 
 void save_pcb(ProcessControlBlock* pcb) {

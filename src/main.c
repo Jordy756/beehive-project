@@ -175,12 +175,6 @@ static void process_active_processes(void) {
     for (int i = 0; i < total_processes && running; i++) {
         if (!running) break;
         if (processes[i].hive != NULL) {
-            // Verificar que el semáforo existe antes de usarlo
-            if (!processes[i].shared_resource_sem) {
-                printf("Error: Semáforo no inicializado para proceso %d\n", i);
-                continue;
-            }
-            
             if (sem_wait(processes[i].shared_resource_sem) == 0) {
                 schedule_process(&pcb);
                 if (scheduler_state.current_policy == SHORTEST_JOB_FIRST) {
