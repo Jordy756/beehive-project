@@ -1,11 +1,9 @@
 #ifndef FILE_MANAGER_TYPES_H
 #define FILE_MANAGER_TYPES_H
 
-
 #include <time.h>
 #include <stdbool.h>
 #include <json-c/json.h>
-
 
 // Constants
 #define PCB_FILE "data/pcb.json"
@@ -13,13 +11,11 @@
 #define BEEHIVE_HISTORY_FILE "data/beehive_history.json"
 #define MAX_FILENAME_LENGTH 100
 
-
 typedef enum {
    READY,
    RUNNING,
    WAITING
 } ProcessState;
-
 
 typedef struct {
    int process_id;                // ID único del proceso/colmena
@@ -38,7 +34,6 @@ typedef struct {
    bool exists;                 // Indica si el PCB ya existe
 } ProcessControlBlock;
 
-
 typedef struct {
    double avg_arrival_time;
    double avg_iterations;
@@ -48,6 +43,5 @@ typedef struct {
    int ready_processes;
    int io_waiting_processes;
 } ProcessTable;
-
 
 #endif
