@@ -97,6 +97,7 @@ void init_chambers(ProcessInfo* process_info) {
 }
 
 void init_beehive_process(ProcessInfo* process_info, int id) {
+    // Asignar e inicializar la colmena
     process_info->hive = malloc(sizeof(Beehive));
     Beehive* hive = process_info->hive;
 
@@ -138,7 +139,13 @@ void init_beehive_process(ProcessInfo* process_info, int id) {
     // Inicializar cámaras
     init_chambers(process_info);
 
-    // Crear PCB para la nueva colmena
+    // Inicializar semáforos del proceso
+    init_process_semaphores(process_info);
+
+    // Asignar memoria e inicializar el PCB
+    process_info->pcb = malloc(sizeof(ProcessControlBlock));
+    
+    // Crear entrada PCB en el archivo
     create_pcb_for_beehive(process_info);
 
     // Iniciar el proceso
@@ -151,28 +158,34 @@ void cleanup_beehive_process(ProcessInfo* process_info) {
     if (!process_info || !process_info->hive) return;
     
     Beehive* hive = process_info->hive;
-
+    
     // Detener el hilo
     stop_process_thread(process_info);
-
+    
     // Liberar recursos
     free(hive->bees);
     pthread_mutex_destroy(&hive->chamber_mutex);
     pthread_mutex_destroy(&hive->resources.polen_mutex);
-
+    
+    // Liberar PCB
+    free(process_info->pcb);
+    process_info->pcb = NULL;
+    
     // Liberar la colmena
     free(hive);
     process_info->hive = NULL;
 }
 
 void start_process_thread(ProcessInfo* process_info) {
-    process_info->is_running = true;
+    update_process_state(process_info, READY);
     pthread_create(&process_info->thread_id, NULL, process_main_thread, process_info);
 }
 
 void stop_process_thread(ProcessInfo* process_info) {
-    if (process_info->is_running) {
-        process_info->is_running = false;
+    if (!process_info || !process_info->pcb) return;
+    
+    if (process_info->pcb->state != READY) {
+        update_process_state(process_info, READY);
         pthread_join(process_info->thread_id, NULL);
     }
 }
@@ -181,13 +194,16 @@ void* process_main_thread(void* arg) {
     ProcessInfo* process_info = (ProcessInfo*)arg;
     Beehive* hive = process_info->hive;
 
-    while (process_info->is_running && !hive->should_terminate) {
+    while (!hive->should_terminate) {
+        // Obtener acceso seguro al PCB
         sem_wait(process_info->shared_resource_sem);
+        
+        // printf("ESTADO EN process_main_thread: Colmena %d: %s\n", 
+        //        hive->id,
+        //        process_info->pcb->state == RUNNING ? "RUNNING" :
+        //        process_info->pcb->state == WAITING ? "WAITING" : "READY");
 
-        // Imprimir el estado del proceso RUNNING, WAITING, READY
-        printf("Proceso %d: %s\n", process_info->pcb.process_id, process_info->pcb.state == RUNNING ? "RUNNING" : process_info->pcb.state == WAITING ? "WAITING" : "READY");
-
-        if (process_info->pcb.state == RUNNING) {
+        if (process_info->pcb->state == RUNNING) {
             manage_honey_production(process_info);
             manage_polen_collection(process_info);
             manage_bee_lifecycle(process_info);
@@ -197,15 +213,15 @@ void* process_main_thread(void* arg) {
             update_process_resources(process_info);
             save_beehive_history(process_info);
         }
-
+        
         sem_post(process_info->shared_resource_sem);
         delay_ms(100);
     }
-
     return NULL;
 }
 
 void manage_honey_production(ProcessInfo* process_info) {
+    printf("[Colmena %d] Procesando producción de miel\n", process_info->hive->id);
     Beehive* hive = process_info->hive;
     
     pthread_mutex_lock(&hive->resources.polen_mutex);

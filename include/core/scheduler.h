@@ -13,7 +13,7 @@ void* policy_control_thread(void* arg);
 void update_quantum(void);
 
 // Gestión de procesos
-void schedule_process(ProcessControlBlock* pcb);
+void schedule_process(ProcessControlBlock** pcb);
 void preempt_current_process(void);
 void suspend_process(ProcessInfo* process);
 void resume_process(ProcessInfo* process);
@@ -43,5 +43,8 @@ void return_to_ready_queue(ProcessInfo* process);
 // Gestión de semáforos
 void init_process_semaphores(ProcessInfo* process);
 void cleanup_process_semaphores(ProcessInfo* process);
+
+// Gestión de estado del proceso
+void update_process_state(ProcessInfo* process, ProcessState new_state);
 
 #endif

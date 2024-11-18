@@ -25,7 +25,7 @@ static void handle_signal(int sig) {
     (void)sig;
     printf("\nRecibida señal de terminación (Ctrl+C). Finalizando el programa...\n");
     running = 0;
-
+    
     // Detener todos los procesos inmediatamente
     for (int i = 0; i < total_processes; i++) {
         if (processes[i].hive != NULL) {
@@ -49,8 +49,8 @@ static void setup_signal_handlers(void) {
 static void print_io_stats(void) {
     printf("\n=== Estado de E/S ===\n");
     pthread_mutex_lock(&scheduler_state.io_queue->mutex);
-    
     printf("Procesos en E/S: %d\n", scheduler_state.io_queue->size);
+    
     if (scheduler_state.io_queue->size > 0) {
         printf("Detalles de procesos en E/S:\n");
         for (int i = 0; i < scheduler_state.io_queue->size; i++) {
@@ -58,12 +58,11 @@ static void print_io_stats(void) {
             time_t current_time = time(NULL);
             double elapsed_ms = difftime(current_time, entry->start_time) * 1000;
             printf("- Proceso %d: Tiempo restante: %.0f/%d ms\n",
-                    entry->process->index,
-                    (double)entry->wait_time - elapsed_ms,
-                    entry->wait_time);
+                   entry->process->index,
+                   (double)entry->wait_time - elapsed_ms,
+                   entry->wait_time);
         }
     }
-    
     pthread_mutex_unlock(&scheduler_state.io_queue->mutex);
     printf("==================\n");
 }
@@ -71,19 +70,19 @@ static void print_io_stats(void) {
 static void print_scheduling_info(void) {
     printf("\n=== Estado del Planificador ===\n");
     printf("Política actual: %s\n",
-            scheduler_state.current_policy == ROUND_ROBIN ?
-            "Round Robin" : "Shortest Job First (FSJ)");
-
+           scheduler_state.current_policy == ROUND_ROBIN ?
+           "Round Robin" : "Shortest Job First (FSJ)");
+           
     if (scheduler_state.current_policy == ROUND_ROBIN) {
         printf("Quantum actual: %d\n", scheduler_state.current_quantum);
         printf("Contador de quantum: %d/%d\n",
-                scheduler_state.quantum_counter,
-                QUANTUM_UPDATE_INTERVAL);
+               scheduler_state.quantum_counter,
+               QUANTUM_UPDATE_INTERVAL);
     }
-
+    
     printf("Contador para cambio de política: %d/%d\n",
-            scheduler_state.policy_switch_counter,
-            POLICY_SWITCH_THRESHOLD);
+           scheduler_state.policy_switch_counter,
+           POLICY_SWITCH_THRESHOLD);
     printf("Procesos en cola: %d\n", job_queue_size);
 
     if (scheduler_state.active_process != NULL) {
@@ -92,9 +91,9 @@ static void print_scheduling_info(void) {
         printf(" - Abejas: %d\n", scheduler_state.active_process->resources.bee_count);
         printf(" - Miel: %d\n", scheduler_state.active_process->resources.honey_count);
         printf(" - Total: %d\n", scheduler_state.active_process->resources.total_resources);
-        printf(" - Iteraciones: %d\n", scheduler_state.active_process->pcb.iterations);
+        printf(" - Iteraciones: %d\n", scheduler_state.active_process->pcb->iterations);
     }
-
+    
     print_io_stats();
     printf("=============================\n");
 }
@@ -107,7 +106,6 @@ static void init_processes(void) {
     initial_process->index = 0;
     init_process_semaphores(initial_process);
     init_beehive_process(initial_process, 0);
-    
     total_processes = 1;
 }
 
@@ -126,6 +124,7 @@ static void cleanup_processes(void) {
 static void handle_new_process(ProcessInfo* process_info) {
     if (check_new_queen(process_info) && total_processes < MAX_PROCESSES) {
         int new_index = -1;
+        
         // Buscar siguiente índice disponible
         for (int i = 0; i < MAX_PROCESSES; i++) {
             if (processes[i].hive == NULL) {
@@ -133,18 +132,17 @@ static void handle_new_process(ProcessInfo* process_info) {
                 break;
             }
         }
-
+        
         if (new_index != -1) {
             ProcessInfo* new_process = &processes[new_index];
             new_process->index = new_index;
             init_process_semaphores(new_process);
             init_beehive_process(new_process, new_index);
             total_processes++;
-
+            
             printf("\n=== ¡Nuevo Proceso Creado! ===\n");
             printf("- ID del proceso: %d\n", new_index);
-            printf("- Total de procesos activos: %d/%d\n\n",
-                    total_processes, MAX_PROCESSES);
+            printf("- Total de procesos activos: %d/%d\n\n", total_processes, MAX_PROCESSES);
         }
     }
 }
@@ -153,7 +151,7 @@ static void print_initial_state(void) {
     printf("\n=== Simulación de Colmenas Iniciada ===\n");
     printf("- Cada colmena tiene %d cámaras\n", NUM_CHAMBERS);
     printf("- Política inicial: Round Robin (Quantum: %d)\n",
-            scheduler_state.current_quantum);
+           scheduler_state.current_quantum);
     printf("- FSJ se basa en total de recursos (abejas + miel)\n");
     printf("- Presione Ctrl+C para finalizar la simulación\n\n");
 }
@@ -173,11 +171,9 @@ static void handle_scheduling_policy(void) {
 }
 
 static void process_active_processes(void) {
-    ProcessControlBlock pcb;
-    
+    ProcessControlBlock* pcb;
     for (int i = 0; i < total_processes && running; i++) {
         if (!running) break;
-        
         if (processes[i].hive != NULL) {
             // Verificar que el semáforo existe antes de usarlo
             if (!processes[i].shared_resource_sem) {
@@ -187,22 +183,18 @@ static void process_active_processes(void) {
             
             if (sem_wait(processes[i].shared_resource_sem) == 0) {
                 schedule_process(&pcb);
-                
                 if (scheduler_state.current_policy == SHORTEST_JOB_FIRST) {
                     check_fsj_preemption(&processes[i]);
                 }
-                
                 handle_new_process(&processes[i]);
-                
                 sem_post(processes[i].shared_resource_sem);
             } else {
                 printf("Error: Fallo en sem_wait para proceso %d\n", i);
             }
         }
     }
-    
     if (scheduler_state.active_process != NULL) {
-        update_process_table(&scheduler_state.active_process->pcb);
+        update_process_table(scheduler_state.active_process->pcb);
     }
 }
 
@@ -239,16 +231,15 @@ int main() {
     init_file_manager();
     init_processes();
     print_initial_state();
-
     run_simulation();
-
+    
     printf("\nEsperando a que todos los procesos terminen...\n");
     cleanup_processes();
-
+    
     printf("\n=== Simulación Finalizada ===\n");
     printf("- Total de procesos procesados: %d\n", total_processes);
     printf("- Todos los procesos han sido limpiados\n");
     printf("- Recursos liberados correctamente\n\n");
-
+    
     return 0;
 }
