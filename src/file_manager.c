@@ -19,7 +19,7 @@ pthread_mutex_t history_mutex = PTHREAD_MUTEX_INITIALIZER;
 // Private functions declarations
 static const char* process_state_to_string(ProcessState state);
 static json_object* pcb_to_json(ProcessControlBlock* pcb);
-static json_object* beehive_history_to_json(ProcessInfo* process_info);
+static json_object* beehive_to_json(Beehive* hive);
 
 // Private function implementations
 static const char* process_state_to_string(ProcessState state) {
@@ -33,7 +33,7 @@ static const char* process_state_to_string(ProcessState state) {
 
 static json_object* pcb_to_json(ProcessControlBlock* pcb) {
     if (!pcb) return NULL;
-
+    
     json_object* obj = json_object_new_object();
     json_object_object_add(obj, "process_id", json_object_new_int(pcb->process_id));
     json_object_object_add(obj, "creation_time", json_object_new_string(format_time(pcb->creation_time)));
@@ -45,45 +45,45 @@ static json_object* pcb_to_json(ProcessControlBlock* pcb) {
     json_object_object_add(obj, "total_io_waits", json_object_new_int(pcb->total_io_waits));
     json_object_object_add(obj, "total_io_wait_time", json_object_new_double(pcb->total_io_wait_time));
     json_object_object_add(obj, "total_ready_wait_time", json_object_new_double(pcb->total_ready_wait_time));
+    
     return obj;
 }
 
-static json_object* beehive_history_to_json(ProcessInfo* process_info) {
-    if (!process_info || !process_info->hive || !process_info->pcb) return NULL;
+static json_object* beehive_to_json(Beehive* hive) {
+    if (!hive) return NULL;
     
-    Beehive* hive = process_info->hive;
     json_object* obj = json_object_new_object();
-
+    
     // Timestamp y ID
     json_object_object_add(obj, "timestamp", json_object_new_string(format_time(time(NULL))));
     json_object_object_add(obj, "beehive_id", json_object_new_int(hive->id));
-
+    
     // Huevos
     json_object* eggs = json_object_new_object();
     json_object_object_add(eggs, "current", json_object_new_int(hive->egg_count));
     json_object_object_add(eggs, "hatched", json_object_new_int(hive->hatched_eggs));
     json_object_object_add(eggs, "laid", json_object_new_int(hive->egg_count + hive->hatched_eggs));
     json_object_object_add(obj, "eggs", eggs);
-
+    
     // Abejas
     json_object* bees = json_object_new_object();
     json_object_object_add(bees, "dead", json_object_new_int(hive->dead_bees));
     json_object_object_add(bees, "born", json_object_new_int(hive->born_bees));
     json_object_object_add(bees, "current", json_object_new_int(hive->bee_count));
     json_object_object_add(obj, "bees", bees);
-
+    
     // Polen
     json_object* polen = json_object_new_object();
     json_object_object_add(polen, "total_collected", json_object_new_int(hive->resources.total_polen_collected));
     json_object_object_add(polen, "available", json_object_new_int(hive->resources.polen_for_honey));
     json_object_object_add(obj, "polen", polen);
-
+    
     // Miel
     json_object* honey = json_object_new_object();
     json_object_object_add(honey, "produced", json_object_new_int(hive->produced_honey));
     json_object_object_add(honey, "total", json_object_new_int(hive->honey_count));
     json_object_object_add(obj, "honey", honey);
-
+    
     return obj;
 }
 
@@ -114,7 +114,7 @@ void init_file_manager(void) {
 
 void init_pcb(ProcessControlBlock* pcb, int process_id) {
     if (!pcb) return;
-
+    
     pcb->process_id = process_id;
     pcb->creation_time = time(NULL);
     pcb->arrival_time = time(NULL);
@@ -127,14 +127,14 @@ void init_pcb(ProcessControlBlock* pcb, int process_id) {
     pcb->total_ready_wait_time = 0.0;
     pcb->last_ready_time = time(NULL);
     pcb->last_state_change = time(NULL);
-    pcb->exists = true;  // Se establece como true ya que solo se crea cuando realmente existe
+    pcb->exists = true;
 }
 
 void create_pcb_for_beehive(ProcessInfo* process_info) {
-    if (!process_info || !process_info->hive) return;
-
+    if (!process_info || !process_info->hive || !process_info->pcb) return;
+    
     pthread_mutex_lock(&pcb_mutex);
-
+    
     init_pcb(process_info->pcb, process_info->hive->id);
     
     // Leer el archivo de PCBs
@@ -154,11 +154,11 @@ void create_pcb_for_beehive(ProcessInfo* process_info) {
 }
 
 void update_pcb_state(ProcessControlBlock* pcb, ProcessState new_state, Beehive* hive) {
-    if (!pcb) return;
+    if (!pcb || !hive) return;
     
     time_t current_time = time(NULL);
     double elapsed_time = difftime(current_time, pcb->last_state_change);
-
+    
     switch (pcb->state) {
         case READY:
             if (new_state == RUNNING) {
@@ -174,31 +174,32 @@ void update_pcb_state(ProcessControlBlock* pcb, ProcessState new_state, Beehive*
             if (new_state == READY) {
                 pcb->total_io_wait_time += (pcb->current_io_wait_time / 1000.0);
                 pcb->avg_io_wait_time = pcb->total_io_wait_time / pcb->total_io_waits;
-                save_beehive_history(NULL);
+                save_beehive_history(hive);
                 save_pcb(pcb);
             }
             break;
             
         case RUNNING:
             if (new_state == READY) {
-                save_beehive_history(NULL);
+                save_beehive_history(hive);
                 save_pcb(pcb);
             }
             break;
     }
-
+    
     if (new_state == WAITING && pcb->state != WAITING) {
         pcb->total_io_waits++;
     }
-
+    
     pcb->state = new_state;
     pcb->last_state_change = current_time;
 }
 
 void save_pcb(ProcessControlBlock* pcb) {
     if (!pcb) return;
-
+    
     pthread_mutex_lock(&pcb_mutex);
+    
     json_object* array = read_json_array_file(PCB_FILE);
     json_object* pcb_obj = pcb_to_json(pcb);
     
@@ -223,11 +224,31 @@ void save_pcb(ProcessControlBlock* pcb) {
     
     write_json_file(PCB_FILE, array);
     json_object_put(array);
+    
     pthread_mutex_unlock(&pcb_mutex);
+}
+
+void save_beehive_history(Beehive* hive) {
+    if (!hive) return;
+    
+    pthread_mutex_lock(&history_mutex);
+    
+    json_object* array = read_json_array_file(BEEHIVE_HISTORY_FILE);
+    json_object* history = beehive_to_json(hive);
+    
+    if (history != NULL) {
+        json_object_array_add(array, history);
+        write_json_file(BEEHIVE_HISTORY_FILE, array);
+    }
+    
+    json_object_put(array);
+    
+    pthread_mutex_unlock(&history_mutex);
 }
 
 ProcessTable* load_process_table(void) {
     pthread_mutex_lock(&process_table_mutex);
+    
     ProcessTable* table = malloc(sizeof(ProcessTable));
     memset(table, 0, sizeof(ProcessTable));
     
@@ -236,30 +257,37 @@ ProcessTable* load_process_table(void) {
     
     if (json_object_object_get_ex(root, "avg_arrival_time", &temp))
         table->avg_arrival_time = json_object_get_double(temp);
+    
     if (json_object_object_get_ex(root, "avg_iterations", &temp))
         table->avg_iterations = json_object_get_double(temp);
+    
     if (json_object_object_get_ex(root, "avg_io_wait_time", &temp))
         table->avg_io_wait_time = json_object_get_double(temp);
+    
     if (json_object_object_get_ex(root, "avg_ready_wait_time", &temp))
         table->avg_ready_wait_time = json_object_get_double(temp);
+    
     if (json_object_object_get_ex(root, "total_processes", &temp))
         table->total_processes = json_object_get_int(temp);
+    
     if (json_object_object_get_ex(root, "ready_processes", &temp))
         table->ready_processes = json_object_get_int(temp);
+    
     if (json_object_object_get_ex(root, "io_waiting_processes", &temp))
         table->io_waiting_processes = json_object_get_int(temp);
     
     json_object_put(root);
+    
     pthread_mutex_unlock(&process_table_mutex);
     return table;
 }
 
 void save_process_table(ProcessTable* table) {
     if (!table) return;
-
-    pthread_mutex_lock(&process_table_mutex);
-    json_object* obj = json_object_new_object();
     
+    pthread_mutex_lock(&process_table_mutex);
+    
+    json_object* obj = json_object_new_object();
     json_object_object_add(obj, "avg_arrival_time", json_object_new_double(table->avg_arrival_time));
     json_object_object_add(obj, "avg_iterations", json_object_new_double(table->avg_iterations));
     json_object_object_add(obj, "avg_io_wait_time", json_object_new_double(table->avg_io_wait_time));
@@ -270,24 +298,30 @@ void save_process_table(ProcessTable* table) {
     
     write_json_file(PROCESS_TABLE_FILE, obj);
     json_object_put(obj);
+    
     pthread_mutex_unlock(&process_table_mutex);
 }
 
 void update_process_table(ProcessControlBlock* pcb) {
     if (!pcb) return;
-
+    
     ProcessTable* table = load_process_table();
+    
     double old_weight = (double)(table->total_processes) / (table->total_processes + 1);
     double new_weight = 1.0 / (table->total_processes + 1);
     
     table->avg_arrival_time = (table->avg_arrival_time * old_weight) +
                              (difftime(time(NULL), pcb->arrival_time) * new_weight);
+    
     table->avg_iterations = (table->avg_iterations * old_weight) +
                            (pcb->iterations * new_weight);
+    
     table->avg_io_wait_time = (table->avg_io_wait_time * old_weight) +
                              (pcb->avg_io_wait_time * new_weight);
+    
     table->avg_ready_wait_time = (table->avg_ready_wait_time * old_weight) +
                                 (pcb->avg_ready_wait_time * new_weight);
+    
     table->total_processes++;
     
     if (pcb->state == READY) {
@@ -298,21 +332,4 @@ void update_process_table(ProcessControlBlock* pcb) {
     
     save_process_table(table);
     free(table);
-}
-
-void save_beehive_history(ProcessInfo* process_info) {
-    if (!process_info || !process_info->hive || !process_info->pcb) return;
-
-    pthread_mutex_lock(&history_mutex);
-    
-    json_object* array = read_json_array_file(BEEHIVE_HISTORY_FILE);
-    json_object* history = beehive_history_to_json(process_info);
-    
-    if (history != NULL) {
-        json_object_array_add(array, history);
-        write_json_file(BEEHIVE_HISTORY_FILE, array);
-    }
-    
-    json_object_put(array);
-    pthread_mutex_unlock(&history_mutex);
 }

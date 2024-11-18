@@ -21,7 +21,7 @@ ProcessTable* load_process_table(void);
 void update_process_table(ProcessControlBlock* pcb);
 
 // Beehive history operations
-void save_beehive_history(ProcessInfo* process_info);
+void save_beehive_history(Beehive* hive);
 
 // Thread safety
 extern pthread_mutex_t pcb_mutex;

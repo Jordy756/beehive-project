@@ -205,7 +205,7 @@ void* process_main_thread(void* arg) {
 
             // Actualizar estadísticas del proceso
             update_process_resources(process_info);
-            save_beehive_history(process_info);
+            // save_beehive_history(process_info);
         }
         
         sem_post(process_info->shared_resource_sem);
