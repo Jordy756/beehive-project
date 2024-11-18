@@ -205,7 +205,6 @@ void* process_main_thread(void* arg) {
 
             // Actualizar estadísticas del proceso
             update_process_resources(process_info);
-            // save_beehive_history(process_info);
         }
         
         sem_post(process_info->shared_resource_sem);
@@ -215,7 +214,6 @@ void* process_main_thread(void* arg) {
 }
 
 void manage_honey_production(ProcessInfo* process_info) {
-    printf("[Colmena %d] Procesando producción de miel\n", process_info->hive->id);
     Beehive* hive = process_info->hive;
     
     pthread_mutex_lock(&hive->resources.polen_mutex);

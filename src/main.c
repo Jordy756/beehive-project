@@ -215,7 +215,7 @@ static void run_simulation(void) {
             break;
         }
         
-        delay_ms(5000);
+        delay_ms(2000);
     }
 }
 

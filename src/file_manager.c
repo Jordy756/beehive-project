@@ -158,11 +158,16 @@ void update_pcb_state(ProcessControlBlock* pcb, ProcessState new_state, Beehive*
     
     time_t current_time = time(NULL);
     double elapsed_time = difftime(current_time, pcb->last_state_change);
+
+    // Imprimir el estado actual al estado que va a pasar:
+    printf("Colmena %d: Proceso %d cambia de %s a %s\n", hive->id, pcb->process_id, process_state_to_string(pcb->state), process_state_to_string(new_state));
     
     switch (pcb->state) {
         case READY:
             if (new_state == RUNNING) {
                 pcb->iterations++;
+                // printf("\nColmena %d: Proceso %d en ejecución\n", hive->id, pcb->process_id);
+                // printf("Iteraciones: %d\n", pcb->iterations);
             }
             pcb->total_ready_wait_time += elapsed_time;
             if (pcb->iterations > 0) {
@@ -174,24 +179,25 @@ void update_pcb_state(ProcessControlBlock* pcb, ProcessState new_state, Beehive*
             if (new_state == READY) {
                 pcb->total_io_wait_time += (pcb->current_io_wait_time / 1000.0);
                 pcb->avg_io_wait_time = pcb->total_io_wait_time / pcb->total_io_waits;
-                save_beehive_history(hive);
-                save_pcb(pcb);
             }
             break;
             
         case RUNNING:
-            if (new_state == READY) {
-                save_beehive_history(hive);
-                save_pcb(pcb);
-            }
             break;
     }
-    
+
     if (new_state == WAITING && pcb->state != WAITING) {
         pcb->total_io_waits++;
     }
+
+    if((pcb->state == WAITING && new_state == READY) || (pcb->state == RUNNING && new_state == READY)){
+        pcb->state = new_state;
+        save_beehive_history(hive);
+        save_pcb(pcb);
+    } else {
+        pcb->state = new_state;
+    }
     
-    pcb->state = new_state;
     pcb->last_state_change = current_time;
 }
 
