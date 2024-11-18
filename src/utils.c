@@ -5,10 +5,6 @@
 #include <sys/stat.h>
 #include "../include/core/utils.h"
 
-void init_random(void) {
-    srand(time(NULL));
-}
-
 int random_range(int min, int max) {
     return min + rand() % (max - min + 1);
 }

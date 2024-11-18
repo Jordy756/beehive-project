@@ -7,7 +7,6 @@
 #include <sys/types.h>
 
 // Funciones de números aleatorios
-void init_random(void);
 int random_range(int min, int max);
 
 // Funciones de tiempo
