@@ -1,0 +1,14 @@
+[
+  {
+    "process_id":0,
+    "creation_time":"2024-11-17 18:21:51",
+    "arrival_time":"2024-11-17 18:21:51",
+    "iterations":0,
+    "avg_io_wait_time":0.0,
+    "avg_ready_wait_time":0.0,
+    "state":"ready",
+    "total_io_waits":0,
+    "total_io_wait_time":0.0,
+    "total_ready_wait_time":0.0
+  }
+]
