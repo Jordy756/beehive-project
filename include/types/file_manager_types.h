@@ -19,7 +19,6 @@ typedef enum {
 
 typedef struct {
    int process_id;               // ID único del proceso/colmena
-   time_t creation_time;         // Momento de creación del proceso
    time_t arrival_time;          // Último tiempo de llegada a cola
    int iterations;               // Número de veces que ha entrado en ejecución
    double avg_io_wait_time;      // Tiempo promedio en espera de E/S
@@ -31,7 +30,6 @@ typedef struct {
    double total_io_wait_time;    // Tiempo total en espera de E/S
    double total_ready_wait_time; // Tiempo total en cola de listos
    int current_io_wait_time;     // Tiempo actual de espera de E/S
-   bool exists;                  // Indica si el PCB ya existe
 } ProcessControlBlock;
 
 typedef struct {

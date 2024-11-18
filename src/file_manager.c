@@ -24,10 +24,10 @@ static json_object* beehive_to_json(Beehive* hive);
 // Private function implementations
 static const char* process_state_to_string(ProcessState state) {
     switch (state) {
-        case RUNNING: return "running";
-        case READY: return "ready";
-        case WAITING: return "waiting";
-        default: return "unknown";
+        case RUNNING: return "En ejecución";
+        case READY: return "Listo";
+        case WAITING: return "Espera E/S";
+        default: return "Desconocido";
     }
 }
 
@@ -36,7 +36,6 @@ static json_object* pcb_to_json(ProcessControlBlock* pcb) {
     
     json_object* obj = json_object_new_object();
     json_object_object_add(obj, "process_id", json_object_new_int(pcb->process_id));
-    json_object_object_add(obj, "creation_time", json_object_new_string(format_time(pcb->creation_time)));
     json_object_object_add(obj, "arrival_time", json_object_new_string(format_time(pcb->arrival_time)));
     json_object_object_add(obj, "iterations", json_object_new_int(pcb->iterations));
     json_object_object_add(obj, "avg_io_wait_time", json_object_new_double(pcb->avg_io_wait_time));
@@ -116,7 +115,6 @@ void init_pcb(ProcessControlBlock* pcb, int process_id) {
     if (!pcb) return;
     
     pcb->process_id = process_id;
-    pcb->creation_time = time(NULL);
     pcb->arrival_time = time(NULL);
     pcb->iterations = 0;
     pcb->avg_io_wait_time = 0.0;
@@ -127,7 +125,6 @@ void init_pcb(ProcessControlBlock* pcb, int process_id) {
     pcb->total_ready_wait_time = 0.0;
     pcb->last_ready_time = time(NULL);
     pcb->last_state_change = time(NULL);
-    pcb->exists = true;
 }
 
 void create_pcb_for_beehive(ProcessInfo* process_info) {
@@ -159,15 +156,10 @@ void update_pcb_state(ProcessControlBlock* pcb, ProcessState new_state, Beehive*
     time_t current_time = time(NULL);
     double elapsed_time = difftime(current_time, pcb->last_state_change);
 
-    // Imprimir el estado actual al estado que va a pasar:
-    printf("Colmena %d: Proceso %d cambia de %s a %s\n", hive->id, pcb->process_id, process_state_to_string(pcb->state), process_state_to_string(new_state));
-    
     switch (pcb->state) {
         case READY:
             if (new_state == RUNNING) {
                 pcb->iterations++;
-                // printf("\nColmena %d: Proceso %d en ejecución\n", hive->id, pcb->process_id);
-                // printf("Iteraciones: %d\n", pcb->iterations);
             }
             pcb->total_ready_wait_time += elapsed_time;
             if (pcb->iterations > 0) {
@@ -225,7 +217,6 @@ void save_pcb(ProcessControlBlock* pcb) {
     // Si no existe, añadir nuevo
     if (!found) {
         json_object_array_add(array, pcb_obj);
-        pcb->exists = true;
     }
     
     write_json_file(PCB_FILE, array);

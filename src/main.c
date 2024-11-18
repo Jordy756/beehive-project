@@ -88,9 +88,9 @@ static void print_scheduling_info(void) {
     if (scheduler_state.active_process != NULL) {
         printf("\nProceso activo: %d\n", scheduler_state.active_process->index);
         printf("Recursos del proceso activo:\n");
-        printf(" - Abejas: %d\n", scheduler_state.active_process->resources.bee_count);
-        printf(" - Miel: %d\n", scheduler_state.active_process->resources.honey_count);
-        printf(" - Total: %d\n", scheduler_state.active_process->resources.total_resources);
+        printf(" - Abejas: %d\n", scheduler_state.active_process->hive->bee_count);
+        printf(" - Miel: %d\n", scheduler_state.active_process->hive->honey_count);
+        printf(" - Total: %d\n", (scheduler_state.active_process->hive->bee_count + scheduler_state.active_process->hive->honey_count));
         printf(" - Iteraciones: %d\n", scheduler_state.active_process->pcb->iterations);
     }
     

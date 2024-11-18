@@ -17,9 +17,6 @@ void schedule_process(ProcessControlBlock** pcb);
 void preempt_current_process(void);
 void suspend_process(ProcessInfo* process);
 void resume_process(ProcessInfo* process);
-void update_process_resources(ProcessInfo* process);
-void update_process_priority(ProcessInfo* process);
-void reset_process_timeslice(ProcessInfo* process);
 
 // Gestión de cola de trabajo
 void update_job_queue(ProcessInfo* processes, int total_processes);

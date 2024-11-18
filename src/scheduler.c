@@ -167,7 +167,6 @@ void* io_manager_thread(void* arg) {
 void return_to_ready_queue(ProcessInfo* process) {
     sem_wait(&scheduler_state.queue_sem);
     update_process_state(process, READY);
-    reset_process_timeslice(process);
     
     if (scheduler_state.current_policy == SHORTEST_JOB_FIRST) {
         sort_processes_fsj(job_queue, job_queue_size);
@@ -201,44 +200,14 @@ void suspend_process(ProcessInfo* process) {
 void resume_process(ProcessInfo* process) {
     if (process != NULL) {
         update_process_state(process, RUNNING);
-        reset_process_timeslice(process);
-    }
-}
-
-void update_process_resources(ProcessInfo* process) {
-    if (!process || !process->hive) return;
-    
-    process->resources.bee_count = process->hive->bee_count;
-    process->resources.honey_count = process->hive->honey_count;
-    process->resources.total_resources = process->resources.bee_count + process->resources.honey_count;
-    process->resources.last_update = time(NULL);
-}
-
-void reset_process_timeslice(ProcessInfo* process) {
-    if (process != NULL) {
-        process->remaining_time_slice = PROCESS_TIME_SLICE;
-    }
-}
-
-void update_process_priority(ProcessInfo* process) {
-    if (process != NULL) {
-        update_process_resources(process);
-        int wait_time = (int)difftime(time(NULL), process->last_quantum_start);
-        process->priority = wait_time + (process->resources.total_resources / 10);
     }
 }
 
 void sort_processes_fsj(ProcessInfo* processes, int count) {
-    // Actualizar recursos antes de ordenar
-    for (int i = 0; i < count; i++) {
-        update_process_resources(&processes[i]);
-    }
-    
     // Ordenar por total de recursos (menor a mayor)
     for (int i = 0; i < count - 1; i++) {
         for (int j = 0; j < count - i - 1; j++) {
-            if (processes[j].resources.total_resources > 
-                processes[j + 1].resources.total_resources) {
+            if ((processes[j].hive->bee_count + processes[j].hive->honey_count) >  (processes[j + 1].hive->bee_count + processes[j + 1].hive->honey_count)) {
                 ProcessInfo temp = processes[j];
                 processes[j] = processes[j + 1];
                 processes[j + 1] = temp;
@@ -250,11 +219,7 @@ void sort_processes_fsj(ProcessInfo* processes, int count) {
 bool should_preempt_fsj(ProcessInfo* new_process, ProcessInfo* current_process) {
     if (!new_process || !current_process) return false;
     
-    update_process_resources(new_process);
-    update_process_resources(current_process);
-    
-    return new_process->resources.total_resources < 
-           current_process->resources.total_resources;
+    return (new_process->hive->bee_count + new_process->hive->honey_count) < (current_process->hive->bee_count + current_process->hive->honey_count);
 }
 
 void check_fsj_preemption(ProcessInfo* process) {
@@ -263,8 +228,6 @@ void check_fsj_preemption(ProcessInfo* process) {
     if (scheduler_state.current_policy == SHORTEST_JOB_FIRST && 
         scheduler_state.active_process != NULL) {
         if (should_preempt_fsj(process, scheduler_state.active_process)) {
-            scheduler_state.active_process->preempted = true;
-            scheduler_state.active_process->preemption_time = time(NULL);
             preempt_current_process();
             sort_processes_fsj(job_queue, job_queue_size);
             scheduler_state.active_process = process;
@@ -298,10 +261,7 @@ void handle_fsj_preemption(void) {
         
         for (int i = 0; i < job_queue_size; i++) {
             if (job_queue[i].pcb->state == READY) {
-                update_process_resources(&job_queue[i]);
-                if (lowest_resource_process == NULL || 
-                    job_queue[i].resources.total_resources < 
-                    lowest_resource_process->resources.total_resources) {
+                if (lowest_resource_process == NULL || (job_queue[i].hive->bee_count + job_queue[i].hive->honey_count) < (lowest_resource_process->hive->bee_count + lowest_resource_process->hive->honey_count)) {
                     lowest_resource_process = &job_queue[i];
                     should_preempt = true;
                 }
@@ -309,17 +269,14 @@ void handle_fsj_preemption(void) {
         }
         
         if (should_preempt && lowest_resource_process != NULL) {
-            update_process_resources(scheduler_state.active_process);
-            if (lowest_resource_process->resources.total_resources < 
-                scheduler_state.active_process->resources.total_resources) {
+            if ((lowest_resource_process->hive->bee_count + lowest_resource_process->hive->honey_count) < 
+            (scheduler_state.active_process->hive->bee_count + scheduler_state.active_process->hive->honey_count)) {
                 printf("\nFSJ Preemption: Proceso %d (recursos: %d) interrumpe a Proceso %d (recursos: %d)\n",
                        lowest_resource_process->index,
-                       lowest_resource_process->resources.total_resources,
+                       (lowest_resource_process->hive->bee_count + lowest_resource_process->hive->honey_count),
                        scheduler_state.active_process->index,
-                       scheduler_state.active_process->resources.total_resources);
+                       (scheduler_state.active_process->hive->bee_count + scheduler_state.active_process->hive->honey_count));
                 
-                scheduler_state.active_process->preempted = true;
-                scheduler_state.active_process->preemption_time = current_time;
                 preempt_current_process();
                 sort_processes_fsj(job_queue, job_queue_size);
                 scheduler_state.active_process = lowest_resource_process;
@@ -424,13 +381,6 @@ void update_job_queue(ProcessInfo* processes, int total_processes) {
             // Inicializar semáforos y estados
             init_process_semaphores(process);
             process->pcb->state = READY;
-            process->remaining_time_slice = PROCESS_TIME_SLICE;
-            process->preempted = false;
-            process->preemption_time = 0;
-            
-            // Actualizar recursos y prioridad
-            update_process_resources(process);
-            update_process_priority(process);
             job_queue_size++;
         }
     }
@@ -463,7 +413,6 @@ void schedule_process(ProcessControlBlock** pcb) {
         if (difftime(current_time, last_preemption_check) >= 2.0) {
             for (int i = 0; i < job_queue_size; i++) {
                 if (job_queue[i].pcb->state == READY) {
-                    update_process_resources(&job_queue[i]);
                     if (scheduler_state.active_process == NULL ||
                         should_preempt_fsj(&job_queue[i], scheduler_state.active_process)) {
                         next_process = &job_queue[i];
@@ -485,10 +434,7 @@ void schedule_process(ProcessControlBlock** pcb) {
     if (next_process != NULL) {
         if (scheduler_state.active_process != NULL) {
             if (scheduler_state.current_policy == SHORTEST_JOB_FIRST) {
-                update_process_resources(scheduler_state.active_process);
-                update_process_resources(next_process);
-                if (next_process->resources.total_resources >= 
-                    scheduler_state.active_process->resources.total_resources) {
+                if ((next_process->hive->bee_count + next_process->hive->honey_count) >= (scheduler_state.active_process->hive->bee_count + scheduler_state.active_process->hive->honey_count)) {
                     sem_post(&scheduler_state.scheduler_sem);
                     return;
                 }

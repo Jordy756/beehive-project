@@ -28,14 +28,6 @@ typedef enum {
     SHORTEST_JOB_FIRST
 } SchedulingPolicy;
 
-// Recursos del proceso
-typedef struct {
-    int total_resources; // Suma de abejas y miel
-    int bee_count;      // Número de abejas
-    int honey_count;    // Cantidad de miel
-    time_t last_update; // Último momento de actualización
-} ProcessResources;
-
 // Información de proceso
 typedef struct ProcessInfo {
     Beehive* hive;                // Puntero a la colmena asociada
@@ -43,11 +35,6 @@ typedef struct ProcessInfo {
     pthread_t thread_id;          // ID del hilo del proceso
     sem_t* shared_resource_sem;   // Semáforo para recursos compartidos
     time_t last_quantum_start;    // Inicio del quantum actual
-    int remaining_time_slice;     // Tiempo restante en el slice actual
-    int priority;                 // Prioridad del proceso
-    ProcessResources resources;   // Recursos del proceso
-    bool preempted;              // Indica si fue interrumpido
-    time_t preemption_time;      // Momento de la última interrupción
     ProcessControlBlock* pcb;     // Puntero al PCB
 } ProcessInfo;
 

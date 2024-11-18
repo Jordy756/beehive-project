@@ -201,10 +201,7 @@ void* process_main_thread(void* arg) {
             manage_honey_production(process_info);
             manage_polen_collection(process_info);
             manage_bee_lifecycle(process_info);
-            // print_beehive_stats(process_info);
-
-            // Actualizar estadísticas del proceso
-            update_process_resources(process_info);
+            print_beehive_stats(process_info);
         }
         
         sem_post(process_info->shared_resource_sem);
@@ -451,7 +448,7 @@ void print_chamber_row(ProcessInfo* process_info, int start_index, int end_index
                     printf("M%d ", cell->has_honey ? 1 : 0);
                 }
             }
-            printf("\t");
+            printf("\t\t\t");
         }
         printf("\n");
     }
@@ -498,7 +495,6 @@ bool check_new_queen(ProcessInfo* process_info) {
     bool needs_new_hive = hive->should_create_new_hive;
     if (needs_new_hive) {
         hive->should_create_new_hive = false;
-        printf("[Colmena %d] Detectada necesidad de nueva colmena\n", hive->id);
     }
     pthread_mutex_unlock(&hive->chamber_mutex);
     
