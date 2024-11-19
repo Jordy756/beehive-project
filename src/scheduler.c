@@ -11,6 +11,7 @@ SchedulerState scheduler_state;
 
 // Funciones de utilidad privadas
 static bool is_queue_empty(ReadyQueue* queue) {
+    printf("El tamano de la cola de listos es: %d\n", queue->size);
     return queue->size == 0;
 }
 
@@ -54,8 +55,6 @@ void add_to_ready_queue(ProcessInfo* process) {
 void remove_from_ready_queue(ProcessInfo* process) {
     if (!process || !scheduler_state.ready_queue) return;
 
-    pthread_mutex_lock(&scheduler_state.ready_queue->mutex);
-    
     int index = -1;
     for (int i = 0; i < scheduler_state.ready_queue->size; i++) {
         if (scheduler_state.ready_queue->processes[i] == process) {
@@ -70,8 +69,6 @@ void remove_from_ready_queue(ProcessInfo* process) {
         }
         scheduler_state.ready_queue->size--;
     }
-    
-    pthread_mutex_unlock(&scheduler_state.ready_queue->mutex);
 }
 
 ProcessInfo* get_next_ready_process(void) {
@@ -235,15 +232,11 @@ void update_process_state(ProcessInfo* process, ProcessState new_state) {
 }
 
 void preempt_current_process(void) {
-    pthread_mutex_lock(&scheduler_state.scheduler_mutex);
-    
     if (scheduler_state.active_process) {
         ProcessInfo* process = scheduler_state.active_process;
         update_process_state(process, READY);
         scheduler_state.active_process = NULL;
     }
-    
-    pthread_mutex_unlock(&scheduler_state.scheduler_mutex);
 }
 
 void resume_process(ProcessInfo* process) {
@@ -261,28 +254,24 @@ void schedule_process(void) {
         if (next) {
             scheduler_state.active_process = next;
             resume_process(next);
-            printf("Proceso %d seleccionado para ejecución\n", next->index);
         }
-        pthread_mutex_unlock(&scheduler_state.scheduler_mutex);
-        return;
-    }
-    
-    // Si hay un proceso activo, verificar si debe ser interrumpido
-    ProcessInfo* current = scheduler_state.active_process;
-    time_t now = time(NULL);
-    
-    // Verificar quantum en RR
-    if (scheduler_state.current_policy == ROUND_ROBIN) {
-        double elapsed = difftime(now, current->last_quantum_start);
-        if (elapsed >= scheduler_state.current_quantum) {
-            preempt_current_process();
-            add_to_ready_queue(current);
-            ProcessInfo* next = get_next_ready_process();
-            if (next) {
-                scheduler_state.active_process = next;
-                resume_process(next);
-                printf("Proceso %d reemplaza a proceso %d (quantum expirado)\n", 
-                       next->index, current->index);
+    } else {
+        time_t now = time(NULL);
+        ProcessInfo* current = scheduler_state.active_process;
+        
+        // Verificar quantum en RR
+        if (scheduler_state.current_policy == ROUND_ROBIN) {
+            double elapsed = difftime(now, current->last_quantum_start);
+            if (elapsed >= scheduler_state.current_quantum) {
+                printf("Quantum expirado para proceso %d\n", current->index);
+                preempt_current_process();
+                add_to_ready_queue(current);
+                // Obtener siguiente proceso
+                ProcessInfo* next = get_next_ready_process();
+                if (next) {
+                    scheduler_state.active_process = next;
+                    resume_process(next);
+                }
             }
         }
     }
@@ -334,7 +323,7 @@ void* policy_control_thread(void* arg) {
         }
         
         schedule_process();
-        delay_ms(100);
+        delay_ms(1000);
     }
     
     return NULL;
@@ -362,11 +351,10 @@ void init_scheduler(void) {
     // Inicializar cola de E/S
     init_io_queue();
     
+    printf("Planificador inicializado - Política: %s, Quantum: %d\n", scheduler_state.current_policy == ROUND_ROBIN ? "Round Robin" : "FSJ", scheduler_state.current_quantum);
     // Iniciar hilos
     pthread_create(&scheduler_state.policy_control_thread, NULL, policy_control_thread, NULL);
     pthread_create(&scheduler_state.io_thread, NULL, io_manager_thread, NULL);
-    
-    printf("Planificador inicializado - Política: %s, Quantum: %d\n", scheduler_state.current_policy == ROUND_ROBIN ? "Round Robin" : "FSJ", scheduler_state.current_quantum);
 }
 
 void cleanup_scheduler(void) {

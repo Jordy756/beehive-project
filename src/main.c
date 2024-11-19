@@ -160,7 +160,7 @@ static void run_simulation(void) {
         }
 
         // Esperar antes del siguiente ciclo
-        delay_ms(1000);
+        delay_ms(5000);
     }
 }
 
