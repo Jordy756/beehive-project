@@ -20,7 +20,7 @@ void schedule_process(void);
 
 // Gestión de estado de proceso
 void update_process_state(ProcessInfo* process, ProcessState new_state);
-void preempt_current_process(void);
+void preempt_current_process(ProcessState new_state);
 void resume_process(ProcessInfo* process);
 
 // Gestión de FSJ

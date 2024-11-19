@@ -206,7 +206,7 @@ void handle_fsj_preemption(void) {
     ProcessInfo* next = get_next_ready_process();
     
     if (next && should_preempt_fsj(next)) {
-        preempt_current_process();
+        preempt_current_process(READY);
         add_to_ready_queue(current);
         scheduler_state.active_process = next;
         resume_process(next);
@@ -231,10 +231,10 @@ void update_process_state(ProcessInfo* process, ProcessState new_state) {
     }
 }
 
-void preempt_current_process(void) {
+void preempt_current_process(ProcessState new_state) {
     if (scheduler_state.active_process) {
         ProcessInfo* process = scheduler_state.active_process;
-        update_process_state(process, READY);
+        update_process_state(process, new_state);
         scheduler_state.active_process = NULL;
     }
 }
@@ -259,13 +259,30 @@ void schedule_process(void) {
         time_t now = time(NULL);
         ProcessInfo* current = scheduler_state.active_process;
         
+        // Verificar si el proceso actual necesita E/S
+        if (random_range(1, 100) <= IO_PROBABILITY) {
+            printf("Proceso %d requiere E/S\n", current->index);
+            preempt_current_process(WAITING);
+            add_to_io_queue(current);
+            
+            // Obtener siguiente proceso
+            ProcessInfo* next = get_next_ready_process();
+            if (next) {
+                scheduler_state.active_process = next;
+                resume_process(next);
+            }
+            pthread_mutex_unlock(&scheduler_state.scheduler_mutex);
+            return;
+        }
+        
         // Verificar quantum en RR
         if (scheduler_state.current_policy == ROUND_ROBIN) {
             double elapsed = difftime(now, current->last_quantum_start);
             if (elapsed >= scheduler_state.current_quantum) {
                 printf("Quantum expirado para proceso %d\n", current->index);
-                preempt_current_process();
+                preempt_current_process(READY);
                 add_to_ready_queue(current);
+                
                 // Obtener siguiente proceso
                 ProcessInfo* next = get_next_ready_process();
                 if (next) {
