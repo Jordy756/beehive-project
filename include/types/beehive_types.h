@@ -21,7 +21,7 @@
 #define MIN_EGGS 20
 #define MAX_EGGS 40
 #define POLEN_TO_HONEY_RATIO 10
-#define QUEEN_BIRTH_PROBABILITY 90
+#define QUEEN_BIRTH_PROBABILITY 5
 
 // Constantes para polen y tiempo de vida
 #define MIN_POLEN_PER_TRIP 1
@@ -31,8 +31,8 @@
 #define MAX_EGG_HATCH_TIME 10
 
 // Constantes para la reina
-#define MIN_EGGS_PER_LAYING 5
-#define MAX_EGGS_PER_LAYING 10
+#define MIN_EGGS_PER_LAYING 100
+#define MAX_EGGS_PER_LAYING 150
 
 // Límites
 #define MAX_EGGS_PER_HIVE 400

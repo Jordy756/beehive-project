@@ -66,8 +66,7 @@ static void cleanup_processes(void) {
 }
 
 static void handle_new_process(ProcessInfo* process_info) {
-    if (check_new_queen(process_info) && 
-        scheduler_state.process_table->total_processes < MAX_PROCESSES) {
+    if (check_new_queen(process_info) && scheduler_state.process_table->total_processes < MAX_PROCESSES) {
         int new_index = -1;
         
         // Buscar siguiente índice disponible
@@ -172,7 +171,7 @@ static void run_simulation(void) {
         }
 
         // Esperar antes del siguiente ciclo
-        delay_ms(scheduler_state.current_quantum * 1000);
+        delay_ms(1000);
     }
 }
 

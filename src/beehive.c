@@ -274,8 +274,7 @@ void manage_polen_collection(ProcessInfo* process_info) {
             hive->bees[i].last_collection_time = current_time;
             
             // Verificar muerte de abeja
-            if (hive->bees[i].polen_collected >= 
-                random_range(MIN_POLEN_LIFETIME, MAX_POLEN_LIFETIME)) {
+            if (hive->bees[i].polen_collected >= random_range(MIN_POLEN_LIFETIME, MAX_POLEN_LIFETIME)) {
                 handle_bee_death(process_info, i);
             }
         }
@@ -333,10 +332,8 @@ void process_eggs_hatching(ProcessInfo* process_info) {
         for (int x = 0; x < MAX_CHAMBER_SIZE; x++) {
             for (int y = 0; y < MAX_CHAMBER_SIZE; y++) {
                 if (chamber->cells[x][y].has_egg) {
-                    double elapsed_time = difftime(current_time, 
-                                                 chamber->cells[x][y].egg_lay_time) * 1000;
+                    double elapsed_time = difftime(current_time, chamber->cells[x][y].egg_lay_time) * 1000;
                     if (elapsed_time >= MAX_EGG_HATCH_TIME) {
-                        // Eclosión del huevo
                         chamber->cells[x][y].has_egg = false;
                         chamber->egg_count--;
                         hive->egg_count--;
@@ -476,26 +473,31 @@ void print_beehive_stats(ProcessInfo* process_info) {
     update_bee_counts(process_info, &alive_count, &queen_count, &worker_count);
     
     printf("\nColmena #%d - Estadísticas:\n", hive->id);
-    // printf("Total de abejas: %d/%d\n", alive_count, MAX_BEES);
-    // printf("├─ Reina: %d\n└─ Obreras: %d\n", queen_count, worker_count);
-    // printf("Total de miel: %d/%d\n", hive->honey_count, MAX_HONEY_PER_HIVE);
-    // printf("Total de huevos: %d/%d\n", hive->egg_count, MAX_EGGS_PER_HIVE);
-    // printf("Huevos eclosionados: %d\n", hive->hatched_eggs);
-    // printf("Abejas muertas: %d\n", hive->dead_bees);
-    // printf("Abejas nacidas: %d\n", hive->born_bees);
-    // printf("Miel producida: %d\n", hive->produced_honey);
-    // printf("Recursos para FSJ (abejas + miel): %d\n", hive->bees_and_honey_count);
+    printf("├─ Total de abejas: %d/%d\n", alive_count, MAX_BEES);
+    printf("  ├─ Reina: %d\n  └─ Obreras: %d\n", queen_count, worker_count);
+    printf("├─ Total de miel: %d/%d\n", hive->honey_count, MAX_HONEY_PER_HIVE);
+    printf("├─ Total de huevos: %d/%d\n", hive->egg_count, MAX_EGGS_PER_HIVE);
+    printf("├─ Huevos eclosionados: %d\n", hive->hatched_eggs);
+    printf("├─ Abejas muertas: %d\n", hive->dead_bees);
+    printf("├─ Abejas nacidas: %d\n", hive->born_bees);
+    printf("├─ Miel producida: %d\n", hive->produced_honey);
+    printf("└─ Recursos para FSJ (abejas + miel): %d\n", hive->bees_and_honey_count);
     
-    // print_chamber_matrix(process_info);
+    print_chamber_matrix(process_info);
 }
 
 bool check_new_queen(ProcessInfo* process_info) {
     Beehive* hive = process_info->hive;
+
     pthread_mutex_lock(&hive->chamber_mutex);
+
     bool needs_new_hive = hive->should_create_new_hive;
+
     if (needs_new_hive) {
         hive->should_create_new_hive = false;
     }
+
     pthread_mutex_unlock(&hive->chamber_mutex);
+
     return needs_new_hive;
 }

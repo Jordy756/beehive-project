@@ -17,7 +17,7 @@
 #define PROCESS_TIME_SLICE 100
 
 // Constantes para E/S
-#define IO_PROBABILITY 0
+#define IO_PROBABILITY 5
 #define MIN_IO_WAIT 30
 #define MAX_IO_WAIT 50
 #define MAX_IO_QUEUE_SIZE 40
@@ -73,7 +73,7 @@ typedef struct {
     ProcessInfo* active_process;
     IOQueue* io_queue;
     ReadyQueue* ready_queue;
-    ProcessTable* process_table;  // Nueva referencia a la tabla de procesos
+    ProcessTable* process_table;
     pthread_mutex_t scheduler_mutex;
 } SchedulerState;
 

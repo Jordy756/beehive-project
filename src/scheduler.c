@@ -42,12 +42,13 @@ void add_to_ready_queue(ProcessInfo* process) {
     if (!is_queue_full(scheduler_state.ready_queue)) {
         scheduler_state.ready_queue->processes[scheduler_state.ready_queue->size] = process;
         scheduler_state.ready_queue->size++;
-        scheduler_state.process_table->ready_processes++;
         
         if (scheduler_state.current_policy == SHORTEST_JOB_FIRST) {
             sort_ready_queue_fsj();
         }
     }
+
+    scheduler_state.process_table->ready_processes = scheduler_state.ready_queue->size;
     
     pthread_mutex_unlock(&scheduler_state.ready_queue->mutex);
 }
@@ -68,8 +69,9 @@ void remove_from_ready_queue(ProcessInfo* process) {
             scheduler_state.ready_queue->processes[i] = scheduler_state.ready_queue->processes[i + 1];
         }
         scheduler_state.ready_queue->size--;
-        scheduler_state.process_table->ready_processes--;
     }
+
+    scheduler_state.process_table->ready_processes = scheduler_state.ready_queue->size;
 }
 
 ProcessInfo* get_next_ready_process(void) {
@@ -112,10 +114,11 @@ void add_to_io_queue(ProcessInfo* process) {
         entry->wait_time = process->pcb->current_io_wait_time;
         entry->start_time = time(NULL);
         scheduler_state.io_queue->size++;
-        scheduler_state.process_table->io_waiting_processes++;
         
         printf("Proceso %d añadido a cola de E/S. Tiempo de espera: %d ms\n", process->index, entry->wait_time);
     }
+
+    scheduler_state.process_table->io_waiting_processes = scheduler_state.io_queue->size;
     
     pthread_mutex_unlock(&scheduler_state.io_queue->mutex);
     pthread_cond_signal(&scheduler_state.io_queue->condition);
@@ -138,7 +141,6 @@ void process_io_queue(void) {
                 scheduler_state.io_queue->entries[j] = scheduler_state.io_queue->entries[j + 1];
             }
             scheduler_state.io_queue->size--;
-            scheduler_state.process_table->io_waiting_processes--;
             
             // Actualizar estado y añadir a cola de listos
             update_process_state(process, READY);
@@ -149,6 +151,8 @@ void process_io_queue(void) {
             i++;
         }
     }
+
+    scheduler_state.process_table->io_waiting_processes = scheduler_state.io_queue->size;
     
     pthread_mutex_unlock(&scheduler_state.io_queue->mutex);
 }
