@@ -11,7 +11,6 @@ SchedulerState scheduler_state;
 
 // Funciones de utilidad privadas
 static bool is_queue_empty(ReadyQueue* queue) {
-    printf("El tamano de la cola de listos es: %d\n", queue->size);
     return queue->size == 0;
 }
 
@@ -43,6 +42,7 @@ void add_to_ready_queue(ProcessInfo* process) {
     if (!is_queue_full(scheduler_state.ready_queue)) {
         scheduler_state.ready_queue->processes[scheduler_state.ready_queue->size] = process;
         scheduler_state.ready_queue->size++;
+        scheduler_state.process_table->ready_processes++;
         
         if (scheduler_state.current_policy == SHORTEST_JOB_FIRST) {
             sort_ready_queue_fsj();
@@ -68,6 +68,7 @@ void remove_from_ready_queue(ProcessInfo* process) {
             scheduler_state.ready_queue->processes[i] = scheduler_state.ready_queue->processes[i + 1];
         }
         scheduler_state.ready_queue->size--;
+        scheduler_state.process_table->ready_processes--;
     }
 }
 
@@ -111,6 +112,7 @@ void add_to_io_queue(ProcessInfo* process) {
         entry->wait_time = process->pcb->current_io_wait_time;
         entry->start_time = time(NULL);
         scheduler_state.io_queue->size++;
+        scheduler_state.process_table->io_waiting_processes++;
         
         printf("Proceso %d añadido a cola de E/S. Tiempo de espera: %d ms\n", process->index, entry->wait_time);
     }
@@ -136,6 +138,7 @@ void process_io_queue(void) {
                 scheduler_state.io_queue->entries[j] = scheduler_state.io_queue->entries[j + 1];
             }
             scheduler_state.io_queue->size--;
+            scheduler_state.process_table->io_waiting_processes--;
             
             // Actualizar estado y añadir a cola de listos
             update_process_state(process, READY);
@@ -368,7 +371,12 @@ void init_scheduler(void) {
     // Inicializar cola de E/S
     init_io_queue();
     
+    // Inicializar tabla de procesos
+    scheduler_state.process_table = malloc(sizeof(ProcessTable));
+    init_process_table(scheduler_state.process_table);
+    
     printf("Planificador inicializado - Política: %s, Quantum: %d\n", scheduler_state.current_policy == ROUND_ROBIN ? "Round Robin" : "FSJ", scheduler_state.current_quantum);
+    
     // Iniciar hilos
     pthread_create(&scheduler_state.policy_control_thread, NULL, policy_control_thread, NULL);
     pthread_create(&scheduler_state.io_thread, NULL, io_manager_thread, NULL);
@@ -393,6 +401,9 @@ void cleanup_scheduler(void) {
     // Limpiar cola de listos
     pthread_mutex_destroy(&scheduler_state.ready_queue->mutex);
     free(scheduler_state.ready_queue);
+    
+    // Limpiar tabla de procesos
+    free(scheduler_state.process_table);
     
     // Limpiar cola de E/S
     cleanup_io_queue();

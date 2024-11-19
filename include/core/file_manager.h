@@ -15,8 +15,8 @@ void init_pcb(ProcessControlBlock* pcb, int process_id);
 void create_pcb_for_beehive(ProcessInfo* process_info);
 
 // Process table operations
+void init_process_table(ProcessTable* table);  // Nuevo método
 void save_process_table(ProcessTable* table);
-ProcessTable* load_process_table(void);
 void update_process_table(ProcessControlBlock* pcb);
 
 // Beehive history operations
