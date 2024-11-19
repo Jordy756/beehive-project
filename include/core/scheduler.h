@@ -1,5 +1,6 @@
 #ifndef SCHEDULER_H
 #define SCHEDULER_H
+
 #include "../types/scheduler_types.h"
 
 // Inicialización y limpieza
@@ -11,35 +12,31 @@ void switch_scheduling_policy(void);
 void* policy_control_thread(void* arg);
 void update_quantum(void);
 
-// Gestión de procesos
-void schedule_process(ProcessControlBlock** pcb);
+// Gestión de colas y procesos
+void add_to_ready_queue(ProcessInfo* process);
+void remove_from_ready_queue(ProcessInfo* process);
+ProcessInfo* get_next_ready_process(void);
+void schedule_process(void);
+
+// Gestión de estado de proceso
+void update_process_state(ProcessInfo* process, ProcessState new_state);
 void preempt_current_process(void);
 void resume_process(ProcessInfo* process);
 
-// Gestión de cola de trabajo
-void update_job_queue(ProcessInfo* processes, int total_processes);
-void move_process_to_end(ProcessInfo* process);  // Nueva función para mover proceso al final
-
 // Gestión de FSJ
-void sort_processes_fsj(ProcessInfo* processes, int count);
-bool should_preempt_fsj(ProcessInfo* new_process, ProcessInfo* current_process);
-void check_fsj_preemption(ProcessInfo* process);
+void sort_ready_queue_fsj(void);
+bool should_preempt_fsj(ProcessInfo* new_process);
 void handle_fsj_preemption(void);
 
 // Gestión de E/S
 void init_io_queue(void);
 void cleanup_io_queue(void);
 void* io_manager_thread(void* arg);
-bool check_and_handle_io(ProcessInfo* process);
 void add_to_io_queue(ProcessInfo* process);
 void process_io_queue(void);
-void return_to_ready_queue(ProcessInfo* process);
 
-// Gestión de semáforos
+// Utilidades
 void init_process_semaphores(ProcessInfo* process);
 void cleanup_process_semaphores(ProcessInfo* process);
-
-// Gestión de estado del proceso
-void update_process_state(ProcessInfo* process, ProcessState new_state);
 
 #endif
