@@ -1,6 +1,5 @@
 #ifndef SCHEDULER_H
 #define SCHEDULER_H
-
 #include "../types/scheduler_types.h"
 
 // Inicialización y limpieza
@@ -15,12 +14,11 @@ void update_quantum(void);
 // Gestión de procesos
 void schedule_process(ProcessControlBlock** pcb);
 void preempt_current_process(void);
-void suspend_process(ProcessInfo* process);
 void resume_process(ProcessInfo* process);
 
 // Gestión de cola de trabajo
 void update_job_queue(ProcessInfo* processes, int total_processes);
-void reorder_ready_queue(void);
+void move_process_to_end(ProcessInfo* process);  // Nueva función para mover proceso al final
 
 // Gestión de FSJ
 void sort_processes_fsj(ProcessInfo* processes, int count);

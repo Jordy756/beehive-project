@@ -57,10 +57,7 @@ static void print_io_stats(void) {
             IOQueueEntry* entry = &scheduler_state.io_queue->entries[i];
             time_t current_time = time(NULL);
             double elapsed_ms = difftime(current_time, entry->start_time) * 1000;
-            printf("- Proceso %d: Tiempo restante: %.0f/%d ms\n",
-                   entry->process->index,
-                   (double)entry->wait_time - elapsed_ms,
-                   entry->wait_time);
+            printf("- Proceso %d: Tiempo restante: %.0f/%d ms\n", entry->process->index, (double)entry->wait_time - elapsed_ms, entry->wait_time);
         }
     }
     pthread_mutex_unlock(&scheduler_state.io_queue->mutex);
@@ -69,20 +66,18 @@ static void print_io_stats(void) {
 
 static void print_scheduling_info(void) {
     printf("\n=== Estado del Planificador ===\n");
-    printf("Política actual: %s\n",
-           scheduler_state.current_policy == ROUND_ROBIN ?
-           "Round Robin" : "Shortest Job First (FSJ)");
-           
+    printf("Política actual: %s\n", scheduler_state.current_policy == ROUND_ROBIN ? "Round Robin" : "Shortest Job First (FSJ)");
+
     if (scheduler_state.current_policy == ROUND_ROBIN) {
         printf("Quantum actual: %d\n", scheduler_state.current_quantum);
-        printf("Contador de quantum: %d/%d\n",
-               scheduler_state.quantum_counter,
-               QUANTUM_UPDATE_INTERVAL);
+        if (scheduler_state.active_process != NULL) {
+            time_t current_time = time(NULL);
+            double elapsed = difftime(current_time, scheduler_state.active_process->last_quantum_start);
+            double remaining = scheduler_state.current_quantum - elapsed;
+            printf("Tiempo restante del quantum actual: %.1f segundos\n", remaining > 0 ? remaining : 0);
+        }
     }
     
-    printf("Contador para cambio de política: %d/%d\n",
-           scheduler_state.policy_switch_counter,
-           POLICY_SWITCH_THRESHOLD);
     printf("Procesos en cola: %d\n", job_queue_size);
 
     if (scheduler_state.active_process != NULL) {
@@ -101,12 +96,14 @@ static void print_scheduling_info(void) {
 static void init_processes(void) {
     memset(processes, 0, sizeof(processes));
     
-    // Crear proceso inicial
-    ProcessInfo* initial_process = &processes[0];
-    initial_process->index = 0;
-    init_process_semaphores(initial_process);
-    init_beehive_process(initial_process, 0);
-    total_processes = 1;
+    // Crear procesos iniciales
+    for (int i = 0; i < INITIAL_BEEHIVES; i++) {
+        ProcessInfo* process = &processes[i];
+        process->index = i;
+        init_process_semaphores(process);
+        init_beehive_process(process, i);
+    }
+    total_processes = INITIAL_BEEHIVES;
 }
 
 static void cleanup_processes(void) {
@@ -139,9 +136,6 @@ static void handle_new_process(ProcessInfo* process_info) {
             init_process_semaphores(new_process);
             init_beehive_process(new_process, new_index);
             total_processes++;
-            
-            printf("\n=== ¡Nuevo Proceso Creado! ===\n");
-            printf("- ID del proceso: %d\n", new_index);
             printf("- Total de procesos activos: %d/%d\n\n", total_processes, MAX_PROCESSES);
         }
     }

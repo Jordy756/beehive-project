@@ -11,15 +11,15 @@
 // Constantes de planificación
 #define MIN_QUANTUM 2
 #define MAX_QUANTUM 10
-#define QUANTUM_UPDATE_INTERVAL 5
-#define POLICY_SWITCH_THRESHOLD 10
+#define QUANTUM_UPDATE_INTERVAL 10     // 10 segundos para actualizar quantum
+#define POLICY_SWITCH_THRESHOLD 30     // 30 segundos para cambiar de política
 #define MAX_PROCESSES 40
-#define PROCESS_TIME_SLICE 100 // Tiempo base en ms para cada proceso
+#define PROCESS_TIME_SLICE 100        // Tiempo base en ms para cada proceso
 
 // Constantes para E/S
-#define IO_PROBABILITY 5 // 5% de probabilidad
-#define MIN_IO_WAIT 30 // 30ms mínimo
-#define MAX_IO_WAIT 50 // 50ms máximo
+#define IO_PROBABILITY 5     // 5% de probabilidad
+#define MIN_IO_WAIT 30      // 30ms mínimo
+#define MAX_IO_WAIT 50      // 50ms máximo
 #define MAX_IO_QUEUE_SIZE 40
 
 // Tipos de políticas de planificación
@@ -30,12 +30,12 @@ typedef enum {
 
 // Información de proceso
 typedef struct ProcessInfo {
-    Beehive* hive;                // Puntero a la colmena asociada
-    int index;                    // Índice en la cola de procesos
-    pthread_t thread_id;          // ID del hilo del proceso
-    sem_t* shared_resource_sem;   // Semáforo para recursos compartidos
-    time_t last_quantum_start;    // Inicio del quantum actual
-    ProcessControlBlock* pcb;     // Puntero al PCB
+    Beehive* hive;                   // Puntero a la colmena asociada
+    int index;                       // Índice en la cola de procesos
+    pthread_t thread_id;             // ID del hilo del proceso
+    sem_t* shared_resource_sem;      // Semáforo para recursos compartidos
+    time_t last_quantum_start;       // Inicio del quantum actual
+    ProcessControlBlock* pcb;        // Puntero al PCB
 } ProcessInfo;
 
 // Entrada en la cola de E/S
@@ -55,18 +55,18 @@ typedef struct {
 
 // Estado del planificador
 typedef struct {
-    SchedulingPolicy current_policy;    // Política actual
-    int current_quantum;                // Quantum actual para RR
-    int quantum_counter;                // Contador para actualización de quantum
-    int policy_switch_counter;          // Contador para cambio de política
-    bool running;                       // Estado de ejecución del planificador
-    pthread_t policy_control_thread;    // Hilo de control de política
-    pthread_t io_thread;                // Hilo de E/S
-    sem_t scheduler_sem;                // Semáforo del planificador
-    sem_t queue_sem;                    // Semáforo de la cola
-    ProcessInfo* active_process;        // Proceso actualmente en ejecución
-    IOQueue* io_queue;                  // Cola de E/S
-    pthread_mutex_t preemption_mutex;   // Mutex para preempción
+    SchedulingPolicy current_policy;      // Política actual
+    int current_quantum;                  // Quantum actual para RR
+    time_t last_quantum_update;           // Nuevo: Último tiempo de actualización del quantum
+    time_t last_policy_switch;            // Nuevo: Último tiempo de cambio de política
+    bool running;                         // Estado de ejecución del planificador
+    pthread_t policy_control_thread;      // Hilo de control de política
+    pthread_t io_thread;                  // Hilo de E/S
+    sem_t scheduler_sem;                  // Semáforo del planificador
+    sem_t queue_sem;                      // Semáforo de la cola
+    ProcessInfo* active_process;          // Proceso actualmente en ejecución
+    IOQueue* io_queue;                    // Cola de E/S
+    pthread_mutex_t preemption_mutex;     // Mutex para preempción
 } SchedulerState;
 
 // Variables globales externas

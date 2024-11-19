@@ -1,6 +1,5 @@
 #ifndef BEEHIVE_H
 #define BEEHIVE_H
-
 #include "../types/beehive_types.h"
 #include "../types/scheduler_types.h"
 
@@ -40,5 +39,8 @@ bool check_new_queen(ProcessInfo* process_info);
 int count_alive_bees(ProcessInfo* process_info);
 int count_queen_bees(ProcessInfo* process_info);
 void update_bee_counts(ProcessInfo* process_info, int* alive_count, int* queen_count, int* worker_count);
+
+// Actualizar el contador de abejas + miel
+void update_bees_and_honey_count(Beehive* hive);
 
 #endif

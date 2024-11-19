@@ -5,12 +5,14 @@
 #include <semaphore.h>
 #include <stdbool.h>
 #include <time.h>
+
 #include "file_manager_types.h"
 #include <signal.h>
 
 // Constantes relacionadas con las colmenas
 #define MAX_CHAMBER_SIZE 10
 #define NUM_CHAMBERS 10
+#define INITIAL_BEEHIVES 5
 #define MAX_BEEHIVES 40
 #define MIN_BEES 20
 #define MAX_BEES 40
@@ -86,6 +88,7 @@ typedef struct {
     int dead_bees;
     int born_bees;
     int produced_honey;
+    int bees_and_honey_count;  // Suma de bee_count + honey_count para FSJ
     Bee* bees;
     Chamber chambers[NUM_CHAMBERS];
     pthread_mutex_t chamber_mutex;

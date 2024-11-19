@@ -11,13 +11,12 @@ int job_queue_size = 0;
 SchedulerState scheduler_state;
 
 void init_scheduler(void) {
-    // Inicializar estado del planificador
     scheduler_state.current_quantum = random_range(MIN_QUANTUM, MAX_QUANTUM);
     scheduler_state.current_policy = ROUND_ROBIN;
-    scheduler_state.quantum_counter = 0;
-    scheduler_state.policy_switch_counter = 0;
     scheduler_state.running = true;
     scheduler_state.active_process = NULL;
+    scheduler_state.last_quantum_update = time(NULL);
+    scheduler_state.last_policy_switch = time(NULL);
 
     // Inicializar semáforos
     sem_init(&scheduler_state.scheduler_sem, 0, 1);
@@ -36,8 +35,7 @@ void init_scheduler(void) {
     pthread_create(&scheduler_state.io_thread, NULL, io_manager_thread, NULL);
 
     printf("Planificador inicializado - Política inicial: %s, Quantum: %d\n", 
-           scheduler_state.current_policy == ROUND_ROBIN ? "Round Robin" : "FSJ", 
-           scheduler_state.current_quantum);
+        scheduler_state.current_policy == ROUND_ROBIN ? "Round Robin" : "FSJ", scheduler_state.current_quantum);
 }
 
 void cleanup_scheduler(void) {
@@ -159,9 +157,37 @@ void* io_manager_thread(void* arg) {
         
         pthread_mutex_unlock(&scheduler_state.io_queue->mutex);
         process_io_queue();
-        usleep(1000); // 1ms de espera
+        delay_ms(1); // 1ms de espera
     }
     return NULL;
+}
+
+void move_process_to_end(ProcessInfo* process) {
+    sem_wait(&scheduler_state.queue_sem);
+    
+    // Buscar el proceso en la cola
+    int process_index = -1;
+    for (int i = 0; i < job_queue_size; i++) {
+        if (&job_queue[i] == process) {
+            process_index = i;
+            break;
+        }
+    }
+    
+    if (process_index != -1 && process_index < job_queue_size - 1) {
+        // Guardar el proceso
+        ProcessInfo temp = job_queue[process_index];
+        
+        // Mover todos los demás procesos una posición adelante
+        for (int i = process_index; i < job_queue_size - 1; i++) {
+            job_queue[i] = job_queue[i + 1];
+        }
+        
+        // Colocar el proceso al final
+        job_queue[job_queue_size - 1] = temp;
+    }
+    
+    sem_post(&scheduler_state.queue_sem);
 }
 
 void return_to_ready_queue(ProcessInfo* process) {
@@ -171,6 +197,8 @@ void return_to_ready_queue(ProcessInfo* process) {
     if (scheduler_state.current_policy == SHORTEST_JOB_FIRST) {
         sort_processes_fsj(job_queue, job_queue_size);
         check_fsj_preemption(process);
+    } else {
+        move_process_to_end(process);
     }
     sem_post(&scheduler_state.queue_sem);
 }
@@ -186,14 +214,14 @@ void update_process_state(ProcessInfo* process, ProcessState new_state) {
 
 void preempt_current_process(void) {
     if (scheduler_state.active_process != NULL) {
-        update_process_state(scheduler_state.active_process, READY);
-        scheduler_state.active_process = NULL;
-    }
-}
-
-void suspend_process(ProcessInfo* process) {
-    if (process != NULL) {
+        ProcessInfo* process = scheduler_state.active_process;
         update_process_state(process, READY);
+        
+        if (scheduler_state.current_policy == ROUND_ROBIN) {
+            move_process_to_end(process);
+        }
+        
+        scheduler_state.active_process = NULL;
     }
 }
 
@@ -204,10 +232,9 @@ void resume_process(ProcessInfo* process) {
 }
 
 void sort_processes_fsj(ProcessInfo* processes, int count) {
-    // Ordenar por total de recursos (menor a mayor)
     for (int i = 0; i < count - 1; i++) {
         for (int j = 0; j < count - i - 1; j++) {
-            if ((processes[j].hive->bee_count + processes[j].hive->honey_count) >  (processes[j + 1].hive->bee_count + processes[j + 1].hive->honey_count)) {
+            if (processes[j].hive->bees_and_honey_count > processes[j + 1].hive->bees_and_honey_count) {
                 ProcessInfo temp = processes[j];
                 processes[j] = processes[j + 1];
                 processes[j + 1] = temp;
@@ -218,8 +245,7 @@ void sort_processes_fsj(ProcessInfo* processes, int count) {
 
 bool should_preempt_fsj(ProcessInfo* new_process, ProcessInfo* current_process) {
     if (!new_process || !current_process) return false;
-    
-    return (new_process->hive->bee_count + new_process->hive->honey_count) < (current_process->hive->bee_count + current_process->hive->honey_count);
+    return new_process->hive->bees_and_honey_count < current_process->hive->bees_and_honey_count;
 }
 
 void check_fsj_preemption(ProcessInfo* process) {
@@ -261,7 +287,8 @@ void handle_fsj_preemption(void) {
         
         for (int i = 0; i < job_queue_size; i++) {
             if (job_queue[i].pcb->state == READY) {
-                if (lowest_resource_process == NULL || (job_queue[i].hive->bee_count + job_queue[i].hive->honey_count) < (lowest_resource_process->hive->bee_count + lowest_resource_process->hive->honey_count)) {
+                if (lowest_resource_process == NULL || 
+                    job_queue[i].hive->bees_and_honey_count < lowest_resource_process->hive->bees_and_honey_count) {
                     lowest_resource_process = &job_queue[i];
                     should_preempt = true;
                 }
@@ -269,13 +296,13 @@ void handle_fsj_preemption(void) {
         }
         
         if (should_preempt && lowest_resource_process != NULL) {
-            if ((lowest_resource_process->hive->bee_count + lowest_resource_process->hive->honey_count) < 
-            (scheduler_state.active_process->hive->bee_count + scheduler_state.active_process->hive->honey_count)) {
+            if (lowest_resource_process->hive->bees_and_honey_count < 
+                scheduler_state.active_process->hive->bees_and_honey_count) {
                 printf("\nFSJ Preemption: Proceso %d (recursos: %d) interrumpe a Proceso %d (recursos: %d)\n",
                        lowest_resource_process->index,
-                       (lowest_resource_process->hive->bee_count + lowest_resource_process->hive->honey_count),
+                       lowest_resource_process->hive->bees_and_honey_count,
                        scheduler_state.active_process->index,
-                       (scheduler_state.active_process->hive->bee_count + scheduler_state.active_process->hive->honey_count));
+                       scheduler_state.active_process->hive->bees_and_honey_count);
                 
                 preempt_current_process();
                 sort_processes_fsj(job_queue, job_queue_size);
@@ -290,13 +317,11 @@ void handle_fsj_preemption(void) {
 }
 
 void switch_scheduling_policy(void) {
-    scheduler_state.current_policy = (scheduler_state.current_policy == ROUND_ROBIN) ? 
-                                    SHORTEST_JOB_FIRST : ROUND_ROBIN;
+    scheduler_state.current_policy = (scheduler_state.current_policy == ROUND_ROBIN) ? SHORTEST_JOB_FIRST : ROUND_ROBIN;
+    scheduler_state.last_policy_switch = time(NULL);
     
-    printf("\nCambiando política de planificación a: %s\n",
-           scheduler_state.current_policy == ROUND_ROBIN ? 
-           "Round Robin" : "Shortest Job First (FSJ)");
-           
+    printf("\nCambiando política de planificación a: %s\n", scheduler_state.current_policy == ROUND_ROBIN ? "Round Robin" : "Shortest Job First (FSJ)");
+    
     if (scheduler_state.current_policy == SHORTEST_JOB_FIRST) {
         sort_processes_fsj(job_queue, job_queue_size);
     }
@@ -309,7 +334,12 @@ bool should_preempt_process(ProcessInfo* process) {
     double elapsed = difftime(current_time, process->last_quantum_start);
     
     if (scheduler_state.current_policy == ROUND_ROBIN) {
-        return elapsed >= scheduler_state.current_quantum;
+        if (elapsed >= scheduler_state.current_quantum) {
+            // Mover el proceso al final de la cola si se acabó su quantum
+            move_process_to_end(process);
+            return true;
+        }
+        return false;
     } else if (scheduler_state.current_policy == SHORTEST_JOB_FIRST) {
         // Verificar si hay procesos con menos recursos
         for (int i = 0; i < job_queue_size; i++) {
@@ -327,16 +357,16 @@ void* policy_control_thread(void* arg) {
     (void)arg;
     while (scheduler_state.running) {
         sem_wait(&scheduler_state.scheduler_sem);
+        time_t current_time = time(NULL);
         
-        if (scheduler_state.policy_switch_counter >= POLICY_SWITCH_THRESHOLD) {
+        // Verificar cambio de política cada 30 segundos
+        if (difftime(current_time, scheduler_state.last_policy_switch) >= POLICY_SWITCH_THRESHOLD) {
             switch_scheduling_policy();
-            scheduler_state.policy_switch_counter = 0;
         }
         
-        if (scheduler_state.current_policy == ROUND_ROBIN &&
-            scheduler_state.quantum_counter >= QUANTUM_UPDATE_INTERVAL) {
+        // Verificar actualización de quantum cada 10 segundos en RR
+        if (scheduler_state.current_policy == ROUND_ROBIN) {
             update_quantum();
-            scheduler_state.quantum_counter = 0;
         }
         
         if (scheduler_state.active_process != NULL) {
@@ -347,14 +377,18 @@ void* policy_control_thread(void* arg) {
         }
         
         sem_post(&scheduler_state.scheduler_sem);
-        usleep(50000); // 50ms
+        delay_ms(100); // 100ms de espera
     }
     return NULL;
 }
 
 void update_quantum(void) {
-    scheduler_state.current_quantum = random_range(MIN_QUANTUM, MAX_QUANTUM);
-    printf("\nNuevo Quantum: %d\n", scheduler_state.current_quantum);
+    time_t current_time = time(NULL);
+    if (difftime(current_time, scheduler_state.last_quantum_update) >= QUANTUM_UPDATE_INTERVAL) {
+        scheduler_state.current_quantum = random_range(MIN_QUANTUM, MAX_QUANTUM);
+        scheduler_state.last_quantum_update = current_time;
+        printf("\nNuevo Quantum: %d segundos\n", scheduler_state.current_quantum);
+    }
 }
 
 void init_process_semaphores(ProcessInfo* process) {
@@ -389,40 +423,28 @@ void update_job_queue(ProcessInfo* processes, int total_processes) {
     if (scheduler_state.current_policy == SHORTEST_JOB_FIRST && job_queue_size > 1) {
         sort_processes_fsj(job_queue, job_queue_size);
     }
-    
+
     sem_post(&scheduler_state.queue_sem);
 }
 
 void schedule_process(ProcessControlBlock** pcb) {
     sem_wait(&scheduler_state.scheduler_sem);
-    scheduler_state.policy_switch_counter++;
     ProcessInfo* next_process = NULL;
-    static time_t last_preemption_check = 0;
-    time_t current_time = time(NULL);
+    // time_t current_time = time(NULL);
     
     if (scheduler_state.current_policy == SHORTEST_JOB_FIRST) {
-        if (scheduler_state.active_process != NULL) {
-            double elapsed = difftime(current_time, 
-                                   scheduler_state.active_process->last_quantum_start);
-            if (elapsed < 1.0) {
-                sem_post(&scheduler_state.scheduler_sem);
-                return;
-            }
-        }
-        
-        if (difftime(current_time, last_preemption_check) >= 2.0) {
-            for (int i = 0; i < job_queue_size; i++) {
-                if (job_queue[i].pcb->state == READY) {
-                    if (scheduler_state.active_process == NULL ||
-                        should_preempt_fsj(&job_queue[i], scheduler_state.active_process)) {
-                        next_process = &job_queue[i];
-                        break;
-                    }
+        // Lógica de FSJ
+        for (int i = 0; i < job_queue_size; i++) {
+            if (job_queue[i].pcb->state == READY) {
+                if (scheduler_state.active_process == NULL ||
+                    should_preempt_fsj(&job_queue[i], scheduler_state.active_process)) {
+                    next_process = &job_queue[i];
+                    break;
                 }
             }
-            last_preemption_check = current_time;
         }
     } else { // Round Robin
+        // Buscar el primer proceso listo
         for (int i = 0; i < job_queue_size; i++) {
             if (job_queue[i].pcb->state == READY) {
                 next_process = &job_queue[i];
@@ -434,7 +456,8 @@ void schedule_process(ProcessControlBlock** pcb) {
     if (next_process != NULL) {
         if (scheduler_state.active_process != NULL) {
             if (scheduler_state.current_policy == SHORTEST_JOB_FIRST) {
-                if ((next_process->hive->bee_count + next_process->hive->honey_count) >= (scheduler_state.active_process->hive->bee_count + scheduler_state.active_process->hive->honey_count)) {
+                if (next_process->hive->bees_and_honey_count >= 
+                    scheduler_state.active_process->hive->bees_and_honey_count) {
                     sem_post(&scheduler_state.scheduler_sem);
                     return;
                 }
@@ -444,7 +467,7 @@ void schedule_process(ProcessControlBlock** pcb) {
         
         scheduler_state.active_process = next_process;
         resume_process(next_process);
-        *pcb = next_process->pcb;  // Asignar el puntero al PCB
+        *pcb = next_process->pcb;
     }
     
     sem_post(&scheduler_state.scheduler_sem);
