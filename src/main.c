@@ -85,57 +85,65 @@ static void handle_new_process(ProcessInfo* process_info) {
             init_beehive_process(new_process, new_index);
             add_to_ready_queue(new_process);
             scheduler_state.process_table->total_processes++;
-            printf("- Total de procesos activos: %d/%d\n\n", 
-                   scheduler_state.process_table->total_processes, 
-                   MAX_PROCESSES);
+            printf("- Total de procesos activos: %d/%d\n\n", scheduler_state.process_table->total_processes, MAX_PROCESSES);
         }
     }
 }
 
+void print_ready_queue() {
+    printf("\nProcesos en cola de listos: %d\n", scheduler_state.ready_queue->size);
+    
+    if(scheduler_state.ready_queue->size == 0) {
+        printf("└─ No hay procesos en cola de listos\n");
+        return;
+    }
+
+    for (int i = 0; i < scheduler_state.ready_queue->size - 1; i++) {
+        ProcessInfo* process = scheduler_state.ready_queue->processes[i];
+        printf("├─ Proceso #%d: %d abejas, %d miel, %d recursos\n", process->index, process->hive->bee_count, process->hive->honey_count, process->hive->bees_and_honey_count);
+    }
+
+    ProcessInfo* process = scheduler_state.ready_queue->processes[scheduler_state.ready_queue->size - 1];
+    printf("└─ Proceso #%d: %d abejas, %d miel, %d recursos\n", process->index, process->hive->bee_count, process->hive->honey_count, process->hive->bees_and_honey_count);
+}
+
+void print_io_queue() {
+    printf("\nProcesos en cola de E/S: %d\n", scheduler_state.io_queue->size);
+    
+    if(scheduler_state.io_queue->size == 0) {
+        printf("└─ No hay procesos en cola de E/S\n");
+        return;
+    }
+
+    for (int i = 0; i < scheduler_state.io_queue->size - 1; i++) {
+        ProcessInfo* process = scheduler_state.io_queue->entries[i].process;
+        printf("├─ Proceso #%d: %d abejas, %d miel, %d recursos\n", process->index, process->hive->bee_count, process->hive->honey_count, process->hive->bees_and_honey_count);
+    }
+
+    ProcessInfo* process = scheduler_state.io_queue->entries[scheduler_state.io_queue->size - 1].process;
+    printf("└─ Proceso #%d: %d abejas, %d miel, %d recursos\n", process->index, process->hive->bee_count, process->hive->honey_count, process->hive->bees_and_honey_count);
+}
+
 // Impresión de información
 static void print_scheduler_stats(void) {
-    printf("\n=== Estado del Planificador ===\n");
-    printf("Política actual: %s\n", 
-           scheduler_state.current_policy == ROUND_ROBIN ? "Round Robin" : "Shortest Job First (FSJ)");
+    printf("\n=========== Estado del Planificador ===========\n");
+    printf("Política actual: %s\n", scheduler_state.current_policy == ROUND_ROBIN ? "Round Robin" : "Shortest Job First (FSJ)");
 
     if (scheduler_state.current_policy == ROUND_ROBIN) {
         printf("Quantum actual: %d segundos\n", scheduler_state.current_quantum);
     }
 
-    if (scheduler_state.active_process != NULL) {
-        ProcessInfo* active = scheduler_state.active_process;
-        printf("\nProceso en ejecución: %d\n", active->index);
-        printf("├─ Abejas: %d\n", active->hive->bee_count);
-        printf("├─ Miel: %d\n", active->hive->honey_count);
-        printf("├─ Recursos totales: %d\n", active->hive->bees_and_honey_count);
-        printf("└─ Iteraciones: %d\n", active->pcb->iterations);
-    } else {
-        printf("\nNo hay proceso en ejecución\n");
-    }
-
-    printf("\nProcesos en cola de listos: %d\n", scheduler_state.ready_queue->size);
-    for (int i = 0; i < scheduler_state.ready_queue->size; i++) {
-        ProcessInfo* process = scheduler_state.ready_queue->processes[i];
-        printf("├─ Proceso #%d: %d abejas, %d miel, %d recursos\n", 
-               process->index, process->hive->bee_count, 
-               process->hive->honey_count, process->hive->bees_and_honey_count);
-    }
-    printf("Procesos en cola de E/S: %d\n", scheduler_state.io_queue->size);
-    for (int i = 0; i < scheduler_state.io_queue->size; i++) {
-        ProcessInfo* process = scheduler_state.io_queue->entries[i].process;
-        printf("├─ Proceso #%d: %d abejas, %d miel, %d recursos\n", 
-               process->index, process->hive->bee_count, 
-               process->hive->honey_count, process->hive->bees_and_honey_count);
-    }
-    printf("=============================\n");
+    printf("\nProceso en ejecución: %d\n", scheduler_state.active_process->index);
+    print_ready_queue();
+    print_io_queue();
+    printf("===============================================\n");
 }
 
 static void print_initial_state(void) {
     printf("\n=== Simulación de Colmenas Iniciada ===\n");
     printf("├─ Colmenas iniciales: %d\n", INITIAL_BEEHIVES);
     printf("├─ Máximo de colmenas: %d\n", MAX_PROCESSES);
-    printf("├─ Política inicial: %s\n", 
-           scheduler_state.current_policy == ROUND_ROBIN ? "Round Robin" : "FSJ");
+    printf("├─ Política inicial: %s\n", scheduler_state.current_policy == ROUND_ROBIN ? "Round Robin" : "FSJ");
     printf("├─ Quantum inicial: %d segundos\n", scheduler_state.current_quantum);
     printf("└─ Presione Ctrl+C para finalizar\n\n");
 }
@@ -164,7 +172,7 @@ static void run_simulation(void) {
         }
 
         // Esperar antes del siguiente ciclo
-        delay_ms(5000);
+        delay_ms(scheduler_state.current_quantum * 1000);
     }
 }
 
