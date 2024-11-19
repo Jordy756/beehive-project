@@ -477,7 +477,7 @@ void print_beehive_stats(ProcessInfo* process_info) {
     
     printf("\nColmena #%d - Estadísticas:\n", hive->id);
     // printf("Total de abejas: %d/%d\n", alive_count, MAX_BEES);
-    // printf("- Reina: %d\n- Obreras: %d\n", queen_count, worker_count);
+    // printf("├─ Reina: %d\n└─ Obreras: %d\n", queen_count, worker_count);
     // printf("Total de miel: %d/%d\n", hive->honey_count, MAX_HONEY_PER_HIVE);
     // printf("Total de huevos: %d/%d\n", hive->egg_count, MAX_EGGS_PER_HIVE);
     // printf("Huevos eclosionados: %d\n", hive->hatched_eggs);

@@ -104,10 +104,10 @@ static void print_scheduler_stats(void) {
     if (scheduler_state.active_process != NULL) {
         ProcessInfo* active = scheduler_state.active_process;
         printf("\nProceso en ejecución: %d\n", active->index);
-        printf("- Abejas: %d\n", active->hive->bee_count);
-        printf("- Miel: %d\n", active->hive->honey_count);
-        printf("- Recursos totales: %d\n", active->hive->bees_and_honey_count);
-        printf("- Iteraciones: %d\n", active->pcb->iterations);
+        printf("├─ Abejas: %d\n", active->hive->bee_count);
+        printf("├─ Miel: %d\n", active->hive->honey_count);
+        printf("├─ Recursos totales: %d\n", active->hive->bees_and_honey_count);
+        printf("└─ Iteraciones: %d\n", active->pcb->iterations);
     } else {
         printf("\nNo hay proceso en ejecución\n");
     }
@@ -116,24 +116,24 @@ static void print_scheduler_stats(void) {
     // Imprimir en un for cada uno de los procesos que esta en la cola de listos:
     for (int i = 0; i < scheduler_state.ready_queue->size; i++) {
         ProcessInfo* process = scheduler_state.ready_queue->processes[i];
-        printf("- Proceso #%d: %d abejas, %d miel, %d recursos\n", process->index, process->hive->bee_count, process->hive->honey_count, process->hive->bees_and_honey_count);
+        printf("├─ Proceso #%d: %d abejas, %d miel, %d recursos\n", process->index, process->hive->bee_count, process->hive->honey_count, process->hive->bees_and_honey_count);
     }
     printf("Procesos en cola de E/S: %d\n", scheduler_state.io_queue->size);
     // Imprimir en un for cada uno de los procesos que esta en la cola de E/S:
     for (int i = 0; i < scheduler_state.io_queue->size; i++) {
         ProcessInfo* process = scheduler_state.io_queue->entries[i].process;
-        printf("- Proceso #%d: %d abejas, %d miel, %d recursos\n", process->index, process->hive->bee_count, process->hive->honey_count, process->hive->bees_and_honey_count);
+        printf("├─ Proceso #%d: %d abejas, %d miel, %d recursos\n", process->index, process->hive->bee_count, process->hive->honey_count, process->hive->bees_and_honey_count);
     }
     printf("=============================\n");
 }
 
 static void print_initial_state(void) {
     printf("\n=== Simulación de Colmenas Iniciada ===\n");
-    printf("- Colmenas iniciales: %d\n", INITIAL_BEEHIVES);
-    printf("- Máximo de colmenas: %d\n", MAX_PROCESSES);
-    printf("- Política inicial: %s\n", scheduler_state.current_policy == ROUND_ROBIN ? "Round Robin" : "FSJ");
-    printf("- Quantum inicial: %d segundos\n", scheduler_state.current_quantum);
-    printf("- Presione Ctrl+C para finalizar\n\n");
+    printf("├─ Colmenas iniciales: %d\n", INITIAL_BEEHIVES);
+    printf("├─ Máximo de colmenas: %d\n", MAX_PROCESSES);
+    printf("├─ Política inicial: %s\n", scheduler_state.current_policy == ROUND_ROBIN ? "Round Robin" : "FSJ");
+    printf("├─ Quantum inicial: %d segundos\n", scheduler_state.current_quantum);
+    printf("└─ Presione Ctrl+C para finalizar\n\n");
 }
 
 // Ciclo principal
