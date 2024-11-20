@@ -4,45 +4,80 @@
 #include <pthread.h>
 #include <semaphore.h>
 #include <stdbool.h>
+#include <time.h>
 #include "beehive_types.h"
+#include "file_manager_types.h"
 
+// Constantes de planificación
 #define MIN_QUANTUM 2
 #define MAX_QUANTUM 10
-#define QUANTUM_UPDATE_INTERVAL 5
-#define POLICY_SWITCH_THRESHOLD 10
+#define QUANTUM_UPDATE_INTERVAL 10
+#define POLICY_SWITCH_THRESHOLD 30
 #define MAX_PROCESSES 40
-#define PROCESS_TIME_SLICE 100  // Tiempo base en ms para cada proceso
+#define PROCESS_TIME_SLICE 100
 
+// Constantes para E/S
+#define IO_PROBABILITY 5
+#define MIN_IO_WAIT 30
+#define MAX_IO_WAIT 50
+#define MAX_IO_QUEUE_SIZE 40
+
+// Tipos de políticas de planificación
 typedef enum {
     ROUND_ROBIN,
     SHORTEST_JOB_FIRST
 } SchedulingPolicy;
 
-typedef struct {
+// Información de proceso
+typedef struct ProcessInfo {
     Beehive* hive;
     int index;
+    pthread_t thread_id;
     sem_t* shared_resource_sem;
     time_t last_quantum_start;
-    int remaining_time_slice;  // Nuevo: tiempo restante en su quantum
-    bool is_running;          // Nuevo: indica si el proceso está en ejecución
-    int priority;            // Nuevo: prioridad del proceso
+    ProcessControlBlock* pcb;
 } ProcessInfo;
 
+// Entrada en la cola de E/S
+typedef struct {
+    ProcessInfo* process;
+    int wait_time;
+    time_t start_time;
+} IOQueueEntry;
+
+// Cola de E/S
+typedef struct {
+    IOQueueEntry entries[MAX_IO_QUEUE_SIZE];
+    int size;
+    pthread_mutex_t mutex;
+    pthread_cond_t condition;
+} IOQueue;
+
+// Cola de procesos listos
+typedef struct {
+    ProcessInfo* processes[MAX_PROCESSES];
+    int size;
+    pthread_mutex_t mutex;
+} ReadyQueue;
+
+// Estado del planificador
 typedef struct {
     SchedulingPolicy current_policy;
     int current_quantum;
-    int quantum_counter;
-    int policy_switch_counter;
-    bool sort_by_bees;
+    time_t last_quantum_update;
+    time_t last_policy_switch;
     bool running;
     pthread_t policy_control_thread;
+    pthread_t io_thread;
     sem_t scheduler_sem;
-    sem_t queue_sem;         // Nuevo: semáforo específico para la cola
-    ProcessInfo* active_process; // Nuevo: proceso actualmente en ejecución
+    ProcessInfo* active_process;
+    IOQueue* io_queue;
+    ReadyQueue* ready_queue;
+    ProcessTable* process_table;
+    pthread_mutex_t scheduler_mutex;
 } SchedulerState;
 
+// Variables globales externas
 extern SchedulerState scheduler_state;
-extern ProcessInfo* job_queue;
-extern int job_queue_size;
 
 #endif
