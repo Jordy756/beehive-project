@@ -124,11 +124,20 @@ void add_to_io_queue(ProcessInfo* process) {
     pthread_cond_signal(&scheduler_state.io_queue->condition);
 }
 
+void remove_from_io_queue(int index) {
+    for (int j = index; j < scheduler_state.io_queue->size - 1; j++) {
+        scheduler_state.io_queue->entries[j] = scheduler_state.io_queue->entries[j + 1];
+    }
+    scheduler_state.io_queue->size--;
+    scheduler_state.process_table->io_waiting_processes = scheduler_state.io_queue->size;
+}
+
 void process_io_queue(void) {
     pthread_mutex_lock(&scheduler_state.io_queue->mutex);
     
     time_t current_time = time(NULL);
     int i = 0;
+    
     while (i < scheduler_state.io_queue->size) {
         IOQueueEntry* entry = &scheduler_state.io_queue->entries[i];
         double elapsed_ms = difftime(current_time, entry->start_time) * 1000;
@@ -137,10 +146,7 @@ void process_io_queue(void) {
             ProcessInfo* process = entry->process;
             
             // Eliminar de la cola de E/S
-            for (int j = i; j < scheduler_state.io_queue->size - 1; j++) {
-                scheduler_state.io_queue->entries[j] = scheduler_state.io_queue->entries[j + 1];
-            }
-            scheduler_state.io_queue->size--;
+            remove_from_io_queue(i);
             
             // Actualizar estado y añadir a cola de listos
             update_process_state(process, READY);
@@ -151,8 +157,6 @@ void process_io_queue(void) {
             i++;
         }
     }
-
-    scheduler_state.process_table->io_waiting_processes = scheduler_state.io_queue->size;
     
     pthread_mutex_unlock(&scheduler_state.io_queue->mutex);
 }

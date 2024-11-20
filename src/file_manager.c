@@ -11,17 +11,14 @@
 #include <sys/types.h>
 #include <errno.h>
 
-// Initialize mutex for thread-safe file operations
 pthread_mutex_t pcb_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t process_table_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t history_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-// Private functions declarations
 static const char* process_state_to_string(ProcessState state);
 static json_object* pcb_to_json(ProcessControlBlock* pcb);
 static json_object* beehive_to_json(Beehive* hive);
 
-// Private function implementations
 static const char* process_state_to_string(ProcessState state) {
     switch (state) {
         case RUNNING: return "En ejecución";
@@ -86,7 +83,6 @@ static json_object* beehive_to_json(Beehive* hive) {
     return obj;
 }
 
-// Public functions implementations
 void init_file_manager(void) {
     if (!directory_exists("data")) {
         create_directory("data");

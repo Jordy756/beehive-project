@@ -33,6 +33,7 @@ void init_io_queue(void);
 void cleanup_io_queue(void);
 void* io_manager_thread(void* arg);
 void add_to_io_queue(ProcessInfo* process);
+void remove_from_io_queue(int index);
 void process_io_queue(void);
 
 // Utilidades

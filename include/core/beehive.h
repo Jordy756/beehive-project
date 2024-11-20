@@ -29,16 +29,15 @@ void create_new_bee(ProcessInfo* process_info, BeeType type);
 void process_eggs_hatching(ProcessInfo* process_info);
 void process_queen_egg_laying(ProcessInfo* process_info);
 
-// Monitoreo y estadísticas
+// Monitoreo y estadísticas principales
+void print_detailed_bee_status(ProcessInfo* process_info);
 void print_beehive_stats(ProcessInfo* process_info);
 void print_chamber_matrix(ProcessInfo* process_info);
 void print_chamber_row(ProcessInfo* process_info, int start_index, int end_index);
-bool check_new_queen(ProcessInfo* process_info);
 
 // Utilidades de conteo
-int count_alive_bees(ProcessInfo* process_info);
 int count_queen_bees(ProcessInfo* process_info);
-void update_bee_counts(ProcessInfo* process_info, int* alive_count, int* queen_count, int* worker_count);
+bool check_new_queen(ProcessInfo* process_info);
 
 // Actualizar el contador de abejas + miel
 void update_bees_and_honey_count(Beehive* hive);

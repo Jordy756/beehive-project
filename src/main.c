@@ -89,7 +89,7 @@ static void handle_new_process(ProcessInfo* process_info) {
     }
 }
 
-void print_ready_queue() {
+static void print_ready_queue() {
     printf("\nProcesos en cola de listos: %d\n", scheduler_state.ready_queue->size);
     
     if(scheduler_state.ready_queue->size == 0) {
@@ -106,7 +106,7 @@ void print_ready_queue() {
     printf("└─ Proceso #%d: %d abejas, %d miel, %d recursos\n", process->index, process->hive->bee_count, process->hive->honey_count, process->hive->bees_and_honey_count);
 }
 
-void print_io_queue() {
+static void print_io_queue() {
     printf("\nProcesos en cola de E/S: %d\n", scheduler_state.io_queue->size);
     
     if(scheduler_state.io_queue->size == 0) {
