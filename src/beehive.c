@@ -168,7 +168,6 @@ void cleanup_beehive_process(ProcessInfo* process_info) {
     if (!process_info || !process_info->hive) return;
     
     Beehive* hive = process_info->hive;
-    printf("\nLimpiando recursos de Colmena #%d...\n", hive->id);
 
     // Detener el hilo
     stop_process_thread(process_info);
@@ -185,8 +184,6 @@ void cleanup_beehive_process(ProcessInfo* process_info) {
     // Liberar la colmena
     free(hive);
     process_info->hive = NULL;
-
-    printf("└─ Recursos liberados correctamente\n");
 }
 
 void start_process_thread(ProcessInfo* process_info) {

@@ -58,7 +58,7 @@ static void cleanup_processes(void) {
     printf("\nLimpiando todos los procesos...\n");
     for (int i = 0; i < scheduler_state.process_table->total_processes; i++) {
         if (processes[i].hive != NULL) {
-            printf("Limpiando proceso #%d...\n", i);
+            printf("├─ Limpiando proceso #%d...\n", i);
             cleanup_beehive_process(&processes[i]);
             cleanup_process_semaphores(&processes[i]);
         }
