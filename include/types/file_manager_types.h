@@ -9,7 +9,6 @@
 #define PCB_FILE "data/pcb.json"
 #define PROCESS_TABLE_FILE "data/process_table.json"
 #define BEEHIVE_HISTORY_FILE "data/beehive_history.json"
-#define MAX_FILENAME_LENGTH 100
 
 typedef enum {
    READY,
