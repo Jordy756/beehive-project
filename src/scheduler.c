@@ -26,6 +26,7 @@ void init_process_semaphores(ProcessInfo* process) {
     process->last_quantum_start = time(NULL);
 }
 
+// Limpia y destruye los semáforos asociados a un proceso
 void cleanup_process_semaphores(ProcessInfo* process) {
     if (!process || !process->shared_resource_sem) return;
     sem_destroy(process->shared_resource_sem);
@@ -53,6 +54,7 @@ void add_to_ready_queue(ProcessInfo* process) {
     pthread_mutex_unlock(&scheduler_state.ready_queue->mutex);
 }
 
+// Elimina un proceso de la cola de listos
 void remove_from_ready_queue(ProcessInfo* process) {
     if (!process || !scheduler_state.ready_queue) return;
 
@@ -74,6 +76,7 @@ void remove_from_ready_queue(ProcessInfo* process) {
     scheduler_state.process_table->ready_processes = scheduler_state.ready_queue->size;
 }
 
+// Obtiene el siguiente proceso en la cola de listos
 ProcessInfo* get_next_ready_process(void) {
     pthread_mutex_lock(&scheduler_state.ready_queue->mutex);
     
@@ -95,6 +98,7 @@ void init_io_queue(void) {
     pthread_cond_init(&scheduler_state.io_queue->condition, NULL);
 }
 
+//Se Limpian los recursos asociados a la cola de entrada/salida
 void cleanup_io_queue(void) {
     if (!scheduler_state.io_queue) return;
     pthread_mutex_destroy(&scheduler_state.io_queue->mutex);
@@ -102,6 +106,7 @@ void cleanup_io_queue(void) {
     free(scheduler_state.io_queue);
 }
 
+//Se añade un proceso a la cola de entrada/salida
 void add_to_io_queue(ProcessInfo* process) {
     if (!process || !scheduler_state.io_queue) return;
 
@@ -124,6 +129,7 @@ void add_to_io_queue(ProcessInfo* process) {
     pthread_cond_signal(&scheduler_state.io_queue->condition);
 }
 
+//Se elimina un proceso a la cola de entrada/salida
 void remove_from_io_queue(int index) {
     for (int j = index; j < scheduler_state.io_queue->size - 1; j++) {
         scheduler_state.io_queue->entries[j] = scheduler_state.io_queue->entries[j + 1];
@@ -132,6 +138,7 @@ void remove_from_io_queue(int index) {
     scheduler_state.process_table->io_waiting_processes = scheduler_state.io_queue->size;
 }
 
+// Este procesa los procesos en la cola de entrada/salida.
 void process_io_queue(void) {
     pthread_mutex_lock(&scheduler_state.io_queue->mutex);
     
@@ -161,6 +168,7 @@ void process_io_queue(void) {
     pthread_mutex_unlock(&scheduler_state.io_queue->mutex);
 }
 
+//Gestión del hilo de entrada/salida
 void* io_manager_thread(void* arg) {
     (void)arg;
     
@@ -202,12 +210,14 @@ void sort_ready_queue_fsj(void) {
     }
 }
 
+//Alternancia del proceso
 bool should_preempt_fsj(ProcessInfo* new_process) {
     if (!new_process || !scheduler_state.active_process) return false;
     
     return new_process->hive->bees_and_honey_count < scheduler_state.active_process->hive->bees_and_honey_count;
 }
 
+//Manejo de la alternancia con FSJ 
 void handle_fsj_preemption(void) {
     if (!scheduler_state.active_process) return;
     
@@ -242,6 +252,7 @@ void update_process_state(ProcessInfo* process, ProcessState new_state) {
     }
 }
 
+// Gestión principal de planificación
 void preempt_current_process(ProcessState new_state) {
     if (scheduler_state.active_process) {
         ProcessInfo* process = scheduler_state.active_process;
@@ -317,6 +328,7 @@ void update_quantum(void) {
     }
 }
 
+// Cambio de política de planificación 
 void switch_scheduling_policy(void) {
     pthread_mutex_lock(&scheduler_state.scheduler_mutex);
     
@@ -367,25 +379,25 @@ void init_scheduler(void) {
     scheduler_state.running = true;
     scheduler_state.active_process = NULL;
     
-    // Inicializar mutex y semáforos
+    // Inicializa mutex y semáforos
     pthread_mutex_init(&scheduler_state.scheduler_mutex, NULL);
     sem_init(&scheduler_state.scheduler_sem, 0, 1);
     
-    // Inicializar cola de listos
+    // Inicializa cola de listos
     scheduler_state.ready_queue = malloc(sizeof(ReadyQueue));
     scheduler_state.ready_queue->size = 0;
     pthread_mutex_init(&scheduler_state.ready_queue->mutex, NULL);
     
-    // Inicializar cola de E/S
+    // Inicializa cola de E/S
     init_io_queue();
     
-    // Inicializar tabla de procesos
+    // Inicializa tabla de procesos
     scheduler_state.process_table = malloc(sizeof(ProcessTable));
     init_process_table(scheduler_state.process_table);
     
     printf("Planificador inicializado - Política: %s, Quantum: %d\n", scheduler_state.current_policy == ROUND_ROBIN ? "Round Robin" : "FSJ", scheduler_state.current_quantum);
     
-    // Iniciar hilos
+    // Inicia los hilos
     pthread_create(&scheduler_state.policy_control_thread, NULL, policy_control_thread, NULL);
     pthread_create(&scheduler_state.io_thread, NULL, io_manager_thread, NULL);
 }
@@ -393,27 +405,27 @@ void init_scheduler(void) {
 void cleanup_scheduler(void) {
     scheduler_state.running = false;
     
-    // Despertar hilos bloqueados
+    // DEspierta hilos bloqueados
     pthread_mutex_lock(&scheduler_state.io_queue->mutex);
     pthread_cond_broadcast(&scheduler_state.io_queue->condition);
     pthread_mutex_unlock(&scheduler_state.io_queue->mutex);
     
-    // Esperar finalización de hilos
+    // Espera la finalización de los hilos
     pthread_join(scheduler_state.policy_control_thread, NULL);
     pthread_join(scheduler_state.io_thread, NULL);
     
-    // Limpiar recursos
+    // Limpia los recursos
     pthread_mutex_destroy(&scheduler_state.scheduler_mutex);
     sem_destroy(&scheduler_state.scheduler_sem);
     
-    // Limpiar cola de listos
+    // Limpia la cola de listos
     pthread_mutex_destroy(&scheduler_state.ready_queue->mutex);
     free(scheduler_state.ready_queue);
     
-    // Limpiar tabla de procesos
+    // Limpia la tabla de procesos
     free(scheduler_state.process_table);
     
-    // Limpiar cola de E/S
+    // Limpia la cola de E/S
     cleanup_io_queue();
     
     printf("Planificador limpiado correctamente\n");

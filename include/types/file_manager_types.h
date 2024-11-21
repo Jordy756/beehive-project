@@ -5,18 +5,20 @@
 #include <stdbool.h>
 #include <json-c/json.h>
 
-// Constants
+// Constantes de rutas de los archivos
 #define PCB_FILE "data/pcb.json"
 #define PROCESS_TABLE_FILE "data/process_table.json"
 #define BEEHIVE_HISTORY_FILE "data/beehive_history.json"
 #define MAX_FILENAME_LENGTH 100
 
+// Estados del proceso
 typedef enum {
    READY,
    RUNNING,
    WAITING
 } ProcessState;
 
+// Estructura para el bloque de control de procesos
 typedef struct {
    int process_id;               // ID único del proceso/colmena
    time_t arrival_time;          // Último tiempo de llegada a cola
@@ -32,6 +34,7 @@ typedef struct {
    int current_io_wait_time;     // Tiempo actual de espera de E/S
 } ProcessControlBlock;
 
+// Estructura para la tabla de control de procesos
 typedef struct {
    double avg_arrival_time;
    double avg_iterations;

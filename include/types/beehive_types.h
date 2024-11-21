@@ -88,7 +88,7 @@ typedef struct {
     int dead_bees;
     int born_bees;
     int produced_honey;
-    int bees_and_honey_count;  // Suma de bee_count + honey_count para FSJ
+    int bees_and_honey_count;  // Suma de bee_count + honey_count para el FSJ
     Bee* bees;
     Chamber chambers[NUM_CHAMBERS];
     pthread_mutex_t chamber_mutex;

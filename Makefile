@@ -1,6 +1,7 @@
+# Variables de configuración
 CC=gcc
 CFLAGS=-Wall -Wextra -I./include/core -I./include/types -pthread
-LDFLAGS=-pthread -ljson-c
+LDFLAGS=-pthread -ljson-c # Esta es la librería que se añadió para los json
 
 # Directorios
 SRC_DIR=src
@@ -11,12 +12,12 @@ INCLUDE_DIR=include
 CORE_DIR=$(INCLUDE_DIR)/core
 TYPES_DIR=$(INCLUDE_DIR)/types
 
-# Archivos fuente y objeto
+# Archivos
 SRC_FILES=$(wildcard $(SRC_DIR)/*.c)
 OBJ_FILES=$(patsubst $(SRC_DIR)/%.c,$(OBJ_DIR)/%.o,$(SRC_FILES))
-EXEC=$(BIN_DIR)/beehive_sim
+EXEC=$(BIN_DIR)/beehive_sim # Nombre del ejecutable
 
-# Colores para mensajes
+# Colores para mensajes en la terminal
 GREEN=\033[0;32m
 RED=\033[0;31m
 YELLOW=\033[1;33m
@@ -27,14 +28,14 @@ NC=\033[0m
 all: check-deps directories $(EXEC)
 	@echo "$(GREEN)Compilación completada con éxito$(NC)"
 
-# Verificar dependencias
+# Verificación de dependencias
 check-deps:
 	@echo "$(YELLOW)Verificando dependencias...$(NC)"
 	@which $(CC) >/dev/null 2>&1 || (echo "$(RED)Error: GCC no está instalado$(NC)" && exit 1)
 	@ldconfig -p | grep libjson-c >/dev/null 2>&1 || (echo "$(RED)Error: libjson-c no está instalada. Por favor, instale usando:$(NC)\nsudo apt-get install libjson-c-dev" && exit 1)
 	@echo "$(GREEN)Todas las dependencias están instaladas$(NC)"
 
-# Crear directorios necesarios
+# Creación de directorios necesarios
 directories:
 	@mkdir -p $(BIN_DIR)
 	@mkdir -p $(OBJ_DIR)
@@ -42,19 +43,23 @@ directories:
 	@mkdir -p $(CORE_DIR)
 	@mkdir -p $(TYPES_DIR)
 
+# Generación del ejecutable
 $(EXEC): directories $(OBJ_FILES)
 	@echo "$(YELLOW)Enlazando $@...$(NC)"
 	@$(CC) $(OBJ_FILES) -o $@ $(LDFLAGS)
 	@echo "$(GREEN)Enlazado completado$(NC)"
 
+# Compilación
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c directories
 	@echo "$(YELLOW)Compilando $<...$(NC)"
 	@$(CC) $(CFLAGS) -c $< -o $@
 	@echo "$(GREEN)Compilación de $< exitosa$(NC)"
 
+# Ejecutar el programa
 run: all
 	./$(EXEC)
 
+# Limpia archivos generados
 clean:
 	@echo "$(YELLOW)Limpiando archivos generados...$(NC)"
 	@rm -rf $(OBJ_DIR) $(BIN_DIR) $(DATA_DIR)

@@ -11,6 +11,7 @@
 #include <sys/types.h>
 #include <errno.h>
 
+// Sincronización de hilos
 pthread_mutex_t pcb_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t process_table_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t history_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -19,6 +20,7 @@ static const char* process_state_to_string(ProcessState state);
 static json_object* pcb_to_json(ProcessControlBlock* pcb);
 static json_object* beehive_to_json(Beehive* hive);
 
+// Convierte el estado de un proceso a una cadena legible
 static const char* process_state_to_string(ProcessState state) {
     switch (state) {
         case RUNNING: return "En ejecución";
@@ -28,6 +30,7 @@ static const char* process_state_to_string(ProcessState state) {
     }
 }
 
+// Convierte un bloque de control de procesos a un objeto JSON
 static json_object* pcb_to_json(ProcessControlBlock* pcb) {
     if (!pcb) return NULL;
     
@@ -45,12 +48,13 @@ static json_object* pcb_to_json(ProcessControlBlock* pcb) {
     return obj;
 }
 
+// Convierte una colmena a un objeto JSON
 static json_object* beehive_to_json(Beehive* hive) {
     if (!hive) return NULL;
     
     json_object* obj = json_object_new_object();
     
-    // Timestamp y ID
+    // Marca de tiempo y ID
     json_object_object_add(obj, "timestamp", json_object_new_string(format_time(time(NULL))));
     json_object_object_add(obj, "beehive_id", json_object_new_int(hive->id));
     
@@ -83,6 +87,7 @@ static json_object* beehive_to_json(Beehive* hive) {
     return obj;
 }
 
+// Inicialización del sistema de manejo de archivos
 void init_file_manager(void) {
     if (!directory_exists("data")) {
         create_directory("data");
@@ -107,6 +112,7 @@ void init_file_manager(void) {
     }
 }
 
+//Inicialización de la Tabla de procesos
 void init_process_table(ProcessTable* table) {
     if (!table) return;
     
@@ -121,6 +127,7 @@ void init_process_table(ProcessTable* table) {
     save_process_table(table);
 }
 
+//Inicialización del bloque de control de procesos
 void init_pcb(ProcessControlBlock* pcb, int process_id) {
     if (!pcb) return;
     
@@ -137,28 +144,30 @@ void init_pcb(ProcessControlBlock* pcb, int process_id) {
     pcb->last_state_change = time(NULL);
 }
 
+// Crea un bloque de control de procesos (PCB) para una colmena específica
 void create_pcb_for_beehive(ProcessInfo* process_info) {
     if (!process_info || !process_info->hive || !process_info->pcb) return;
     
     pthread_mutex_lock(&pcb_mutex);
     init_pcb(process_info->pcb, process_info->hive->id);
     
-    // Leer el archivo de PCBs
+    // Lee el archivo de PCB
     json_object* array = read_json_array_file(PCB_FILE);
     
-    // Convertir el PCB a JSON y añadirlo al array
+    // Convierte el PCB a JSON y lo añade al array
     json_object* pcb_obj = pcb_to_json(process_info->pcb);
     if (pcb_obj) {
         json_object_array_add(array, pcb_obj);
     }
     
-    // Guardar el archivo actualizado
+    // Guarda el archivo actualizado
     write_json_file(PCB_FILE, array);
     json_object_put(array);
     
     pthread_mutex_unlock(&pcb_mutex);
 }
 
+// Actualiza el estado del proceso
 void update_pcb_state(ProcessControlBlock* pcb, ProcessState new_state, Beehive* hive) {
     if (!pcb || !hive) return;
     
@@ -202,6 +211,7 @@ void update_pcb_state(ProcessControlBlock* pcb, ProcessState new_state, Beehive*
     pcb->last_state_change = current_time;
 }
 
+// Guarda el bloque de control de procesos en el archivo correspondiente
 void save_pcb(ProcessControlBlock* pcb) {
     if (!pcb) return;
     
@@ -209,7 +219,7 @@ void save_pcb(ProcessControlBlock* pcb) {
     json_object* array = read_json_array_file(PCB_FILE);
     json_object* pcb_obj = pcb_to_json(pcb);
     
-    // Buscar y actualizar PCB existente
+    // Busca y actualiza el bloque de control de procesos existente
     bool found = false;
     for (size_t i = 0; i < json_object_array_length(array); i++) {
         json_object* existing_pcb = json_object_array_get_idx(array, i);
@@ -223,7 +233,7 @@ void save_pcb(ProcessControlBlock* pcb) {
         }
     }
     
-    // Si no existe, añadir nuevo
+    // Si no existe, añade uno nuevo
     if (!found) {
         json_object_array_add(array, pcb_obj);
     }
@@ -233,6 +243,7 @@ void save_pcb(ProcessControlBlock* pcb) {
     pthread_mutex_unlock(&pcb_mutex);
 }
 
+// Guarda el historial de colmenas en el archivo correspondiente
 void save_beehive_history(Beehive* hive) {
     if (!hive) return;
     
@@ -249,6 +260,7 @@ void save_beehive_history(Beehive* hive) {
     pthread_mutex_unlock(&history_mutex);
 }
 
+// Guarda la tabla de procesos en el archivo correspondiente
 void save_process_table(ProcessTable* table) {
     if (!table) return;
     
@@ -268,6 +280,7 @@ void save_process_table(ProcessTable* table) {
     pthread_mutex_unlock(&process_table_mutex);
 }
 
+// Actualiza las estadísticas de la tabla de procesos 
 void update_process_table(ProcessControlBlock* pcb) {
     if (!pcb) return;
     
