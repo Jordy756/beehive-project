@@ -1,13 +1,12 @@
 #ifndef BEEHIVE_TYPES_H
 #define BEEHIVE_TYPES_H
 
-#include <pthread.h>
-#include <semaphore.h>
-#include <stdbool.h>
-#include <time.h>
-
-#include "file_manager_types.h"
-#include <signal.h>
+#include <pthread.h> // Biblioteca de hilos
+#include <semaphore.h> // Biblioteca de semáforos
+#include <stdbool.h> // Biblioteca de tipos de datos
+#include <time.h> // Biblioteca de tiempo
+#include "file_manager_types.h" // Tipos de gestión de archivos
+#include <signal.h> // Biblioteca de señales
 
 // Constantes relacionadas con las colmenas
 #define MAX_CHAMBER_SIZE 10 // Tamaño de la cámara 

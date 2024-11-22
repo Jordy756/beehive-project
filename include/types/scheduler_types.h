@@ -1,12 +1,12 @@
 #ifndef SCHEDULER_TYPES_H
 #define SCHEDULER_TYPES_H
 
-#include <pthread.h>
-#include <semaphore.h>
-#include <stdbool.h>
-#include <time.h>
-#include "beehive_types.h"
-#include "file_manager_types.h"
+#include <pthread.h> // Biblioteca de hilos
+#include <semaphore.h> // Biblioteca de semáforos
+#include <stdbool.h> // Biblioteca de tipos de datos
+#include <time.h> // Biblioteca de tiempo
+#include "beehive_types.h" // Tipos de colmenas
+#include "file_manager_types.h" // Tipos de gestión de archivos
 
 // Constantes de planificación
 #define MIN_QUANTUM 2 // Tiempo mínimo de quantum

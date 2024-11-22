@@ -1,15 +1,15 @@
-#include "../include/core/file_manager.h"
-#include "../include/core/utils.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
-#include <json-c/json.h>
-#include <pthread.h>
-#include <unistd.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <errno.h>
+#include "../include/core/file_manager.h" // Gestión de archivos
+#include "../include/core/utils.h" // Utilidades
+#include <stdio.h> // Biblioteca de entrada/salida estándar
+#include <stdlib.h> // Biblioteca de funciones de uso general
+#include <string.h> // Biblioteca de strings
+#include <time.h> // Biblioteca de tiempo
+#include <json-c/json.h> // Biblioteca de JSON
+#include <pthread.h> // Biblioteca de hilos
+#include <unistd.h> // Biblioteca de llamadas al sistema
+#include <sys/stat.h> // Biblioteca de estado de archivos
+#include <sys/types.h> // Biblioteca de tipos de datos
+#include <errno.h> // Biblioteca de errores
 
 // Sincronización de hilos
 pthread_mutex_t pcb_mutex = PTHREAD_MUTEX_INITIALIZER; // Mutex para el acceso a PCB

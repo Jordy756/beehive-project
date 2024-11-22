@@ -1,22 +1,22 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include "../include/core/scheduler.h"
-#include "../include/core/file_manager.h"
-#include "../include/core/utils.h"
+#include <stdio.h> // Biblioteca de entrada/salida estándar
+#include <stdlib.h> // Biblioteca de funciones de uso general
+#include <string.h> // Biblioteca de strings
+#include <unistd.h> // Biblioteca de llamadas al sistema
+#include "../include/core/scheduler.h" // Planificador
+#include "../include/core/file_manager.h" // Gestión de archivos
+#include "../include/core/utils.h" // Utilidades
 
 // Instancia del estado del planificador
 SchedulerState scheduler_state;
 
 // Funciones de utilidad privadas
-static bool is_queue_empty(ReadyQueue* queue) {
-    return queue->size == 0;
+static bool is_queue_empty(ReadyQueue* queue) { // Verifica si la cola de listos está vacía
+    return queue->size == 0; // Devuelve si la cola de listos está vacía
 }
 
 // Verifica si la cola de E/S está llena
 static bool is_queue_full(ReadyQueue* queue) { 
-    return queue->size >= MAX_PROCESSES;
+    return queue->size >= MAX_PROCESSES; // Devuelve si la cola de listos está llena
 }
 
 // Inicialización de semáforos y recursos
@@ -63,7 +63,7 @@ void remove_from_ready_queue(ProcessInfo* process) {
     for (int i = 0; i < scheduler_state.ready_queue->size; i++) { // Recorre la cola de listos
         if (scheduler_state.ready_queue->processes[i] == process) { // Si el proceso está en la cola de listos
             index = i; // Actualiza el índice
-            break;
+            break; // Salir de la bucle
         }
     }
     
@@ -269,46 +269,41 @@ void resume_process(ProcessInfo* process) {
 void schedule_process(void) {
     pthread_mutex_lock(&scheduler_state.scheduler_mutex); // Bloquea el mutex para el acceso al proceso activo
     
-    // Si no hay proceso activo, obtener el siguiente
-    if (!scheduler_state.active_process) {
-        ProcessInfo* next = get_next_ready_process();
+    if (!scheduler_state.active_process) { // Si no hay proceso activo
+        ProcessInfo* next = get_next_ready_process(); // Obtiene el siguiente proceso
         if (next) {
-            scheduler_state.active_process = next;
-            resume_process(next);
+            scheduler_state.active_process = next; // Actualiza el proceso activo
+            resume_process(next); // Resume el proceso
         }
-    } else {
-        time_t now = time(NULL);
-        ProcessInfo* current = scheduler_state.active_process;
+    } else { // Si hay proceso activo
+        time_t now = time(NULL); // Obtiene la hora actual
+        ProcessInfo* current = scheduler_state.active_process; // Obtiene el proceso activo
         
-        // Verificar si el proceso actual necesita E/S
-        if (random_range(1, 100) <= IO_PROBABILITY) {
-            printf("Proceso %d requiere E/S\n", current->index);
-            preempt_current_process(WAITING);
-            add_to_io_queue(current);
+        if (random_range(1, 100) <= IO_PROBABILITY) { // Verificar si el proceso actual necesita E/S
+            printf("Proceso %d requiere E/S\n", current->index); // Imprime un mensaje de debug
+            preempt_current_process(WAITING); // Preemptiva el proceso activo
+            add_to_io_queue(current); // Añade el proceso activo a la cola de E/S
             
-            // Obtener siguiente proceso
-            ProcessInfo* next = get_next_ready_process();
-            if (next) {
-                scheduler_state.active_process = next;
-                resume_process(next);
+            ProcessInfo* next = get_next_ready_process(); // Obtiene el siguiente proceso
+            if (next) { // Si hay siguiente proceso
+                scheduler_state.active_process = next; // Actualiza el proceso activo
+                resume_process(next); // Resume el proceso
             }
-            pthread_mutex_unlock(&scheduler_state.scheduler_mutex);
-            return;
+            pthread_mutex_unlock(&scheduler_state.scheduler_mutex); // Desbloquea el mutex para el acceso al proceso activo
+            return; // Salir de la función
         }
         
-        // Verificar quantum en RR
-        if (scheduler_state.current_policy == ROUND_ROBIN) {
-            double elapsed = difftime(now, current->last_quantum_start);
-            if (elapsed >= scheduler_state.current_quantum) {
-                printf("Quantum expirado para proceso %d\n", current->index);
-                preempt_current_process(READY);
-                add_to_ready_queue(current);
+        if (scheduler_state.current_policy == ROUND_ROBIN) { // Verificar quantum en RR
+            double elapsed = difftime(now, current->last_quantum_start); // Obtiene el tiempo transcurrido desde la última vez que se inició el quantum
+            if (elapsed >= scheduler_state.current_quantum) { // Si ha transcurrido el tiempo de quantum
+                printf("Quantum expirado para proceso %d\n", current->index); // Imprime un mensaje de debug
+                preempt_current_process(READY); // Preemptiva el proceso activo
+                add_to_ready_queue(current); // Añade el proceso activo a la cola de listos
                 
-                // Obtener siguiente proceso
-                ProcessInfo* next = get_next_ready_process();
-                if (next) {
-                    scheduler_state.active_process = next;
-                    resume_process(next);
+                ProcessInfo* next = get_next_ready_process(); // Obtiene el siguiente proceso
+                if (next) { // Si hay siguiente proceso
+                    scheduler_state.active_process = next; // Actualiza el proceso activo
+                    resume_process(next); // Resume el proceso
                 }
             }
         }
@@ -346,26 +341,24 @@ void switch_scheduling_policy(void) {
 void* policy_control_thread(void* arg) {
     (void)arg; // Ignora el argumento pasado al hilo
     
-    while (scheduler_state.running) {
-        time_t current_time = time(NULL);
+    while (scheduler_state.running) { // Mientras la cola de E/S no esté vacía y la cola de listos no esté llena
+        time_t current_time = time(NULL); // Obtiene la hora actual
         
-        // Cambio de política
-        if (difftime(current_time, scheduler_state.last_policy_switch) >= POLICY_SWITCH_THRESHOLD) {
-            switch_scheduling_policy();
+        if (difftime(current_time, scheduler_state.last_policy_switch) >= POLICY_SWITCH_THRESHOLD) { // Si ha transcurrido un tiempo suficiente desde la última vez que cambió de política
+            switch_scheduling_policy(); // Cambia la política de planificación
         }
         
-        // Actualización de quantum en RR
-        if (scheduler_state.current_policy == ROUND_ROBIN) {
-            update_quantum();
-        } else {
-            handle_fsj_preemption();
+        if (scheduler_state.current_policy == ROUND_ROBIN) { // Si la política es RR 
+            update_quantum(); // Actualiza el quantum
+        } else { // Si la política es FSJ
+            handle_fsj_preemption(); // Maneja la alternancia con FSJ
         }
         
         schedule_process(); // Planifica el siguiente proceso
         delay_ms(1000); // Espera 1 segundo
     }
     
-    return NULL;
+    return NULL; // Devuelve NULL
 }
 
 // Inicialización y limpieza
@@ -400,7 +393,6 @@ void init_scheduler(void) {
 void cleanup_scheduler(void) {
     scheduler_state.running = false; // Libera el hilo de E/S
     
-  
     pthread_mutex_lock(&scheduler_state.io_queue->mutex); // DEspierta hilos bloqueados
     pthread_cond_broadcast(&scheduler_state.io_queue->condition); // Señaliza la cola de E/S
     pthread_mutex_unlock(&scheduler_state.io_queue->mutex); // Desbloquea el mutex para el acceso a la cola de E/S

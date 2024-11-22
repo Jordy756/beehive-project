@@ -26,7 +26,7 @@ NC=\033[0m # Color normal
 .PHONY: all clean run directories check-deps # Tareas de utilidad
 
 all: check-deps directories $(EXEC) # Compilación
-	@echo "$(GREEN)Compilación completada con éxito$(NC)" 
+	@echo "$(GREEN)Compilación completada con éxito$(NC)"
 
 # Verificación de dependencias
 check-deps:
@@ -37,7 +37,7 @@ check-deps:
 
 # Creación de directorios necesarios
 directories:
-	@mkdir -p $(BIN_DIR)
+	@mkdir -p $(BIN_DIR) 
 	@mkdir -p $(OBJ_DIR)
 	@mkdir -p $(DATA_DIR)
 	@mkdir -p $(CORE_DIR)

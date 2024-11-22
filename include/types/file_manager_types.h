@@ -1,8 +1,8 @@
 #ifndef FILE_MANAGER_TYPES_H
 #define FILE_MANAGER_TYPES_H
 
-#include <time.h>
-#include <stdbool.h>
+#include <time.h> // Biblioteca de tiempo
+#include <stdbool.h> // Biblioteca de tipos de datos
 #include <json-c/json.h> // Biblioteca de JSON
 
 // Constantes de rutas de los archivos
