@@ -1,9 +1,9 @@
 #ifndef FILE_MANAGER_H
 #define FILE_MANAGER_H
 
-#include "../types/file_manager_types.h"
-#include "../types/beehive_types.h"
-#include "../types/scheduler_types.h"
+#include "../types/file_manager_types.h" // Tipos de gestión de archivos
+#include "../types/beehive_types.h" // Tipos de colmenas
+#include "../types/scheduler_types.h" // Tipos de planificación
 
 // Inicialización y limpieza
 void init_file_manager(void);// Inicializar el gestor de archivos

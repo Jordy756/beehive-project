@@ -1,7 +1,8 @@
 #ifndef BEEHIVE_H
 #define BEEHIVE_H
-#include "../types/beehive_types.h"
-#include "../types/scheduler_types.h"
+
+#include "../types/beehive_types.h" // Tipos de colmenas
+#include "../types/scheduler_types.h" // Tipos de planificación
 
 // Inicialización y limpieza
 void init_beehive_process(ProcessInfo* process_info, int id);// Inicializar el proceso de la apicultura de abejas

@@ -1,15 +1,15 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <signal.h>
-#include <string.h>
-#include "../include/types/beehive_types.h"
-#include "../include/types/scheduler_types.h"
-#include "../include/types/file_manager_types.h"
-#include "../include/core/beehive.h"
-#include "../include/core/scheduler.h"
-#include "../include/core/file_manager.h"
-#include "../include/core/utils.h"
+#include <stdio.h> // Biblioteca de entrada/salida estándar
+#include <stdlib.h> // Biblioteca de funciones de uso general
+#include <unistd.h> // Biblioteca de llamadas al sistema
+#include <signal.h> // Biblioteca de señales
+#include <string.h> // Biblioteca de strings
+#include "../include/types/beehive_types.h" // Tipos de colmenas
+#include "../include/types/scheduler_types.h" // Tipos de planificación
+#include "../include/types/file_manager_types.h" // Tipos de gestión de archivos
+#include "../include/core/beehive.h" // Colmena
+#include "../include/core/scheduler.h" // Planificador
+#include "../include/core/file_manager.h" // Gestión de archivos
+#include "../include/core/utils.h" // Utilidades
 
 // Variables globales
 static volatile sig_atomic_t running = 1;// Indicador de que el programa está en ejecución

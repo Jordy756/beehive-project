@@ -1,11 +1,11 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <semaphore.h>
-#include "../include/core/beehive.h"
-#include "../include/core/utils.h"
-#include "../include/core/file_manager.h"
-#include "../include/core/scheduler.h"
+#include <stdio.h> // Biblioteca de entrada/salida estándar
+#include <stdlib.h> // Biblioteca de funciones de uso general
+#include <string.h> // Biblioteca de strings
+#include <semaphore.h> // Biblioteca de semáforos
+#include "../include/core/beehive.h" // Colmena
+#include "../include/core/utils.h" // Utilidades
+#include "../include/core/file_manager.h" // Gestión de archivos
+#include "../include/core/scheduler.h" // Planificador
 
 bool is_egg_position(int i, int j) {
     if (i >= 2 && i <= 7) { // Filas 3-8

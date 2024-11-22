@@ -1,10 +1,10 @@
 #ifndef UTILS_H
 #define UTILS_H
 
-#include <json-c/json.h>
-#include <time.h>
-#include <stdbool.h>
-#include <sys/types.h>
+#include <json-c/json.h> // Biblioteca de JSON
+#include <time.h> // Biblioteca de tiempo
+#include <stdbool.h> // Biblioteca de tipos de datos
+#include <sys/types.h> // Biblioteca de tipos de datos
 
 // Funciones de números aleatorios
 int random_range(int min, int max);// Generar un número aleatorio entre min y max

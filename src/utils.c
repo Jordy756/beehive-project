@@ -1,9 +1,9 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
-#include <unistd.h>
-#include <sys/stat.h>
-#include "../include/core/utils.h"
+#include <stdio.h> // Biblioteca de entrada/salida estándar
+#include <stdlib.h> // Biblioteca de funciones de uso general
+#include <time.h> // Biblioteca de tiempo
+#include <unistd.h> // Biblioteca de llamadas al sistema
+#include <sys/stat.h> // Biblioteca de estado de archivos
+#include "../include/core/utils.h" // Utilidades
 
 int random_range(int min, int max) {
     return min + rand() % (max - min + 1);// Generar un número aleatorio entre 0 y max-min

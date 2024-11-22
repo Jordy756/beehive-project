@@ -1,7 +1,7 @@
 #ifndef SCHEDULER_H
 #define SCHEDULER_H
 
-#include "../types/scheduler_types.h"
+#include "../types/scheduler_types.h" // Tipos de planificación
 
 // Inicialización y limpieza
 void init_scheduler(void);// Inicializar el planificador
