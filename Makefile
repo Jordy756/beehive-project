@@ -4,29 +4,29 @@ CFLAGS=-Wall -Wextra -I./include/core -I./include/types -pthread
 LDFLAGS=-pthread -ljson-c # Esta es la librería que se añadió para los json
 
 # Directorios
-SRC_DIR=src
-OBJ_DIR=obj
-BIN_DIR=bin
-DATA_DIR=data
-INCLUDE_DIR=include
-CORE_DIR=$(INCLUDE_DIR)/core
-TYPES_DIR=$(INCLUDE_DIR)/types
+SRC_DIR=src #  Directorio de código fuente
+OBJ_DIR=obj # Directorio de objetos
+BIN_DIR=bin #  Directorio de ejecutables
+DATA_DIR=data #  Directorio de datos
+INCLUDE_DIR=include #  Directorio de archivos de cabecera
+CORE_DIR=$(INCLUDE_DIR)/core # Directorio de archivos de cabecera de core
+TYPES_DIR=$(INCLUDE_DIR)/types #  Directorio de archivos de cabecera de types
 
 # Archivos
-SRC_FILES=$(wildcard $(SRC_DIR)/*.c)
-OBJ_FILES=$(patsubst $(SRC_DIR)/%.c,$(OBJ_DIR)/%.o,$(SRC_FILES))
+SRC_FILES=$(wildcard $(SRC_DIR)/*.c) # Archivos de código fuente
+OBJ_FILES=$(patsubst $(SRC_DIR)/%.c,$(OBJ_DIR)/%.o,$(SRC_FILES)) # Archivos de objetos
 EXEC=$(BIN_DIR)/beehive_sim # Nombre del ejecutable
 
 # Colores para mensajes en la terminal
-GREEN=\033[0;32m
-RED=\033[0;31m
-YELLOW=\033[1;33m
-NC=\033[0m
+GREEN=\033[0;32m # Color verde
+RED=\033[0;31m # Color rojo
+YELLOW=\033[1;33m # Color amarillo
+NC=\033[0m # Color normal
 
-.PHONY: all clean run directories check-deps
+.PHONY: all clean run directories check-deps # Tareas de utilidad
 
-all: check-deps directories $(EXEC)
-	@echo "$(GREEN)Compilación completada con éxito$(NC)"
+all: check-deps directories $(EXEC) # Compilación
+	@echo "$(GREEN)Compilación completada con éxito$(NC)" 
 
 # Verificación de dependencias
 check-deps:
@@ -56,11 +56,11 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c directories
 	@echo "$(GREEN)Compilación de $< exitosa$(NC)"
 
 # Ejecutar el programa
-run: all
-	./$(EXEC)
+run: all # Ejecución
+	./$(EXEC) 
 
 # Limpia archivos generados
 clean:
 	@echo "$(YELLOW)Limpiando archivos generados...$(NC)"
 	@rm -rf $(OBJ_DIR) $(BIN_DIR) $(DATA_DIR)
-	@echo "$(GREEN)Limpieza completada$(NC)"
+	@echo "$(GREEN)Limpieza completada$(NC)" 

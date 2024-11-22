@@ -3,19 +3,19 @@
 
 #include <time.h>
 #include <stdbool.h>
-#include <json-c/json.h>
+#include <json-c/json.h> // Biblioteca de JSON
 
 // Constantes de rutas de los archivos
-#define PCB_FILE "data/pcb.json"
-#define PROCESS_TABLE_FILE "data/process_table.json"
-#define BEEHIVE_HISTORY_FILE "data/beehive_history.json"
-#define MAX_FILENAME_LENGTH 100
+#define PCB_FILE "data/pcb.json" // Archivo de control de procesos
+#define PROCESS_TABLE_FILE "data/process_table.json" // Archivo de tabla de procesos
+#define BEEHIVE_HISTORY_FILE "data/beehive_history.json" // Archivo de historial de colmenas
+#define MAX_FILENAME_LENGTH 100 // Longitud máxima de un nombre de archivo
 
 // Estados del proceso
 typedef enum {
-   READY,
-   RUNNING,
-   WAITING
+   READY, // Proceso listo para ejecutarse
+   RUNNING, // Proceso en ejecución
+   WAITING // Proceso en espera
 } ProcessState;
 
 // Estructura para el bloque de control de procesos
@@ -36,13 +36,13 @@ typedef struct {
 
 // Estructura para la tabla de control de procesos
 typedef struct {
-   double avg_arrival_time;
-   double avg_iterations;
-   double avg_io_wait_time;
-   double avg_ready_wait_time;
-   int total_processes;
-   int ready_processes;
-   int io_waiting_processes;
+   double avg_arrival_time; // Tiempo promedio de llegada a cola
+   double avg_iterations; // Tiempo promedio de iteraciones
+   double avg_io_wait_time; // Tiempo promedio en espera de E/S
+   double avg_ready_wait_time; // Tiempo promedio en cola de listos
+   int total_processes; // Número total de procesos
+   int ready_processes; // Número de procesos listos
+   int io_waiting_processes; // Número de procesos en espera de E/S
 } ProcessTable;
 
 #endif
