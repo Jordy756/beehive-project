@@ -9,7 +9,6 @@
 #define PCB_FILE "data/pcb.json" // Archivo de control de procesos
 #define PROCESS_TABLE_FILE "data/process_table.json" // Archivo de tabla de procesos
 #define BEEHIVE_HISTORY_FILE "data/beehive_history.json" // Archivo de historial de colmenas
-#define MAX_FILENAME_LENGTH 100 // Longitud máxima de un nombre de archivo
 
 // Estados del proceso
 typedef enum {
