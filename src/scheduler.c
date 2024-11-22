@@ -30,9 +30,9 @@ void init_process_semaphores(ProcessInfo* process) {
 // Limpia y destruye los semáforos asociados a un proceso
 void cleanup_process_semaphores(ProcessInfo* process) {
     if (!process || !process->shared_resource_sem) return; // Si no hay bloque de control de procesos o semáforo compartido, devuelve
-    sem_destroy(process->shared_resource_sem); // Libera el semáforo compartido
+    sem_destroy(process->shared_resource_sem); // Destruye el semáforo compartido
     free(process->shared_resource_sem); // Libera el semáforo compartido
-    process->shared_resource_sem = NULL; // Libera el semáforo compartido
+    process->shared_resource_sem = NULL; // Libera la memoria del semáforo compartido
 }
 
 // Gestión de cola de listos
